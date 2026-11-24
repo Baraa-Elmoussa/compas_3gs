@@ -90,6 +90,16 @@ def test_derive_force_diagram(tripod):
     assert check[apex]["angle"] < 0.1
 
 
+def test_derive_force_diagram_keeps_only_cells_that_reach_the_forces(tripod):
+    tripod.solve()
+    tripod.derive_force_diagram(max_area_error=0.0, max_angle=0.0)
+
+    apex = tripod.node_at(APEX)
+    assert tripod.cells == {}
+    assert tripod.cell_faces == {}
+    assert "does not reach the forces" in tripod.skipped[apex]
+
+
 def test_solve_removes_old_cells(tripod):
     tripod.solve()
     tripod.derive_force_diagram()

@@ -87,13 +87,7 @@ print("{} nodes, {} members, {} reaction components".format(form.number_of_nodes
 result = model.solve()
 print("A. three bearings: determinate {}, out of balance {:.1e} kN".format(result.determinate, result.residual))
 
-model.derive_force_diagram(kmax=500)
-for node, check in model.check().items():
-    if check["area_error"] > 0.01 or check["angle"] > 1.0:
-        # the EGI fixes the faces and their neighbours from the force directions alone; here the force sizes need other neighbours
-        model.skipped[node] = "the cell does not reach the forces (area error {:.0%}, angle {:.0f} deg)".format(check["area_error"], check["angle"])
-        del model.cells[node]
-        del model.cell_faces[node]
+model.derive_force_diagram(kmax=500)  # keeps the cells that reach the forces; the others are listed in model.skipped
 print("force polyhedra: {} nodes, {} without".format(len(model.cells), len(model.skipped)))
 
 # ------------------------------------------------------------------------------
@@ -210,11 +204,6 @@ print("   chosen state, vertical reactions: {}".format(", ".join("node {} {:+.3f
 print("   largest change from the elastic state: member {} {:+.3f} -> {:+.3f} kN".format(change, elastic_forces[change], chosen[change]))
 
 indeterminate.derive_force_diagram(kmax=500)
-for node, check in indeterminate.check().items():
-    if check["area_error"] > 0.01 or check["angle"] > 1.0:
-        indeterminate.skipped[node] = "the cell does not reach the forces"
-        del indeterminate.cells[node]
-        del indeterminate.cell_faces[node]
 print("   force polyhedra of the chosen state: {} nodes, {} without".format(len(indeterminate.cells), len(indeterminate.skipped)))
 
 # ------------------------------------------------------------------------------
