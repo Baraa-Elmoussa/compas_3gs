@@ -170,7 +170,7 @@ def get_force_mags(volmesh, network):
 
     for u, v in network.edges():
         hfkey = uv_hf_dict[(u, v)]
-        edge_vector = network.edge_vector(u, v)
+        edge_vector = network.edge_vector((u, v))
         face_normal = volmesh.halfface_normal(hfkey)
         face_area = volmesh.halfface_area(hfkey)
         dot = dot_vectors(face_normal, edge_vector)

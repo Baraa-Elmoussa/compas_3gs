@@ -1,4 +1,6 @@
 
+from typing import Any
+
 from compas.geometry import angle_vectors
 
 from compas_3gs.datastructures import Network3gs
@@ -27,39 +29,55 @@ class FormNetwork(Network3gs):
 
     __module__ = 'compas_3gs.diagrams'
 
-    def __init__(self):
-        super(FormNetwork, self).__init__()
+    def __init__(self, *args: Any, name: str = "FormNetwork", **kwargs: Any) -> None:
+        super().__init__(*args, name=name, **kwargs)
         self.dual = None
 
-        a = {'scale': 1}
+        self.attributes.update({
+            'scale': 1,
+        })
+        self.default_node_attributes.update({
+            'is_fixed': False,
+            'x_fix': False,
+            'y_fix': False,
+            'z_fix': False,
+        })
+        self.default_edge_attributes.update({
+            'l_min': 1,
+            'l_max': 20,
+            'target_vector': None,
+            'target_length': None,
+            '_a': 0.0,
+        })
 
-        va = {'is_fixed': False,
-              'x_fix': False,
-              'y_fix': False,
-              'z_fix': False}
+    def dual_halfface(self, edge: tuple[int, int]) -> int:
+        """Find the halfface of the dual force diagram that corresponds to an edge.
 
-        ea = {'l_min': 1,
-              'l_max': 20,
-              'target_vector': None,
-              'target_length': None,
-              '_a': 0.0}
+        Parameters
+        ----------
+        edge
+            The edge `(u, v)`.
 
-        self.attributes.update(a)
-        self.default_node_attributes.update(va)
-        self.default_edge_attributes.update(ea)
+        Returns
+        -------
+        int
+            The halfface of cell `u` that is shared with cell `v` in `self.dual`.
 
-    def dual_halfface(self, edge):
+        """
         u, v = edge
         u_halfface, v_halfface = self.dual.cell_pair_halffaces(u, v)
         return u_halfface
 
-    def update_angle_deviations(self):
+    def update_angle_deviations(self) -> None:
         """Compute the angle deviation with the corresponding halfface normal in the ForceVolMesh.
+
+        The angle, in degrees, is stored as the attribute `_a` of each edge and of its halfface.
+
         """
         for edge in self.edges():
             halfface = self.dual_halfface(edge)
             normal = self.dual.halfface_normal(halfface)
-            edge_vector = self.edge_vector(*edge)
+            edge_vector = self.edge_direction(edge)
             a = angle_vectors(edge_vector, normal, deg=True)
             self.edge_attribute(edge, '_a', a)
             self.dual.face_attribute(halfface, '_a', a)

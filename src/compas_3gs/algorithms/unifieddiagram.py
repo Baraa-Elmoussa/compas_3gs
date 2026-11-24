@@ -1,6 +1,7 @@
 
 from compas.geometry import convex_hull
 from compas.geometry import add_vectors
+from compas.geometry import centroid_points
 from compas.geometry import scale_vector
 from compas.geometry import subtract_vectors
 
@@ -61,7 +62,7 @@ def volmesh_ud(volmesh,
     #   1. current positions of diagrams
     # --------------------------------------------------------------------------
     volmesh_center = volmesh.centroid()
-    network_center = network.datastructure_centroid()
+    network_center = centroid_points(network.nodes_attributes("xyz"))
     translation = subtract_vectors(volmesh_center, network_center)
 
     # --------------------------------------------------------------------------

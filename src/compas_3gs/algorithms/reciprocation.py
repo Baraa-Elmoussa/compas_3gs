@@ -78,7 +78,7 @@ def volmesh_reciprocate(volmesh,
         if not callable(callback):
             raise Exception('Callback is not callable.')
 
-    free_vkeys = list(set(formdiagram.vertices()) - set(fix_vkeys))
+    free_vkeys = list(set(formdiagram.nodes()) - set(fix_vkeys))
 
     init_normals = {fkey: volmesh.halfface_normal(fkey) for fkey in volmesh.faces()}
 
@@ -93,7 +93,7 @@ def volmesh_reciprocate(volmesh,
     for u, v in formdiagram.edges():
         u_hfkey = volmesh.cell_pair_halffaces(u, v)[0]
         face_normal = scale_vector(volmesh.halfface_normal(u_hfkey), weight)
-        edge_vector = scale_vector(formdiagram.edge_vector(u, v), 1 - weight)
+        edge_vector = scale_vector(formdiagram.edge_direction((u, v)), 1 - weight)
         target = normalize_vector(add_vectors(face_normal, edge_vector))
         target_vectors[(u, v)] = {'fkey': u_hfkey,
                                   'target': target}
@@ -114,11 +114,11 @@ def volmesh_reciprocate(volmesh,
         # ----------------------------------------------------------------------
         if weight != 0:
 
-            new_form_xyz = {vkey: [] for vkey in formdiagram.vertices()}
+            new_form_xyz = {vkey: [] for vkey in formdiagram.nodes()}
 
             for u, v in target_vectors:
                 target_v = target_vectors[(u, v)]['target']
-                edge_v = formdiagram.edge_vector(u, v, unitized=False)
+                edge_v = formdiagram.edge_vector((u, v))
 
                 # target edge length -------------------------------------------
                 l = length_vector(edge_v)
@@ -144,11 +144,11 @@ def volmesh_reciprocate(volmesh,
 
                 # collect new coordinates --------------------------------------
                 if u in free_vkeys:
-                    new_u_xyz = add_vectors(formdiagram.vertex_coordinates(v), scale_vector(target_v, -1 * l))
+                    new_u_xyz = add_vectors(formdiagram.node_coordinates(v), scale_vector(target_v, -1 * l))
                     new_form_xyz[u].append(new_u_xyz)
 
                 if v in free_vkeys:
-                    new_v_xyz = add_vectors(formdiagram.vertex_coordinates(u), scale_vector(target_v, l))
+                    new_v_xyz = add_vectors(formdiagram.node_coordinates(u), scale_vector(target_v, l))
                     new_form_xyz[v].append(new_v_xyz)
 
             # compute new vertex coordinates -----------------------------------
@@ -220,7 +220,7 @@ def _check_deviation(volmesh, network):
     for u, v in network.edges():
         u_hf, v_hf = volmesh.cell_pair_halffaces(u, v)
         normal = volmesh.halfface_normal(u_hf)
-        edge = network.edge_vector(u, v, unitized=True)
+        edge = network.edge_direction((u, v))
         perp_check = angle_vectors(normal, edge, deg=True)
         # dot = dot_vectors(normal, edge)
         # perp_check = 1 - abs(dot)
