@@ -175,6 +175,9 @@ nav:
           - Force first: gallery/model_03_force_first.md
           - Determinacy: gallery/model_04_determinacy.md
           - Warren truss, FEM and 3GS: gallery/model_05_warren_truss_fem.md
+          - Transmission tower: gallery/model_06_transmission_tower.md
+          - Schwedler dome: gallery/model_07_schwedler_dome.md
+          - Tensegrity prism: gallery/model_08_tensegrity_prism.md
       - Physical structures:
           - Tripod: gallery/physical_structures_10_tripod.md
           - Space truss: gallery/physical_structures_20_space_truss.md

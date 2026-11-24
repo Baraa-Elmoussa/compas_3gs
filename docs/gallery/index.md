@@ -38,6 +38,9 @@ A form diagram from lines, supports and forces, solved with `GSModel` and drawn 
 - [Force first with `GSModel`: a polyhedral force diagram gives the frame and its forces](model_03_force_first.md)
 - [What `GSModel.solve` does when statics alone has many solutions, or none](model_04_determinacy.md)
 - [A 3D Warren truss solved with 3GS (`GSModel`, statics) and with a linear finite element model](model_05_warren_truss_fem.md)
+- [A lattice transmission tower with two cross-arms, under conductor and wind loads](model_06_transmission_tower.md)
+- [A Schwedler dome: rings, meridians and one diagonal per panel, on a ring of pinned supports](model_07_schwedler_dome.md)
+- [A tensegrity prism: three struts held apart by nine cables, in equilibrium without any load](model_08_tensegrity_prism.md)
 
 ## Physical structures
 
