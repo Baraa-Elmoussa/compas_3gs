@@ -2,6 +2,11 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
+from typing import Any
+from typing import Self
+
+from compas.datastructures import VolMesh
+
 from compas_3gs.datastructures import Mesh3gs
 
 from compas.geometry import add_vectors
@@ -17,7 +22,7 @@ class EGI(Mesh3gs):
 
     """
 
-    def __init__(self, *args, name="EGI", **kwargs):
+    def __init__(self, *args: Any, name: str = "EGI", **kwargs: Any) -> None:
         super().__init__(*args, name=name, **kwargs)
 
         self.attributes.update({
@@ -37,20 +42,20 @@ class EGI(Mesh3gs):
     # --------------------------------------------------------------------------
 
     @classmethod
-    def from_volmesh_cell(cls, ckey, volmesh):
+    def from_volmesh_cell(cls, ckey: int, volmesh: VolMesh) -> Self:
         """Construct the EGI of a cell of a volmesh.
 
         Parameters
         ----------
-        ckey : int
+        ckey
             The identifier of the cell.
-        volmesh : :class:`compas.datastructures.VolMesh`
-            The volmesh.
+        volmesh
+            The volmesh, a [VolMesh][compas.datastructures.VolMesh].
 
         Returns
         -------
-        :class:`EGI`
-            The EGI, with a vertex at ``origin + normal`` for every halfface of the cell (vertex key = halfface key),
+        Self
+            The EGI, with a vertex at `origin + normal` for every halfface of the cell (vertex key = halfface key),
             and a face for every vertex of the cell (face key = vertex key), with outward normals.
 
         """

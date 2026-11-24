@@ -2,6 +2,9 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
+from collections.abc import Sequence
+from typing import Any
+
 from compas.datastructures import Mesh
 
 from compas.geometry import Vector
@@ -24,24 +27,24 @@ class Mesh3gs(Mesh):
 
     """
 
-    def __init__(self, *args, name="Mesh3gs", **kwargs):
+    def __init__(self, *args: Any, name: str = "Mesh3gs", **kwargs: Any) -> None:
         super().__init__(*args, name=name, **kwargs)
 
     # --------------------------------------------------------------------------
     # helpers - vertices
     # --------------------------------------------------------------------------
 
-    def vertex_update_xyz(self, vkey, xyz, constrained=True):
+    def vertex_update_xyz(self, vkey: int, xyz: Sequence[float], constrained: bool = True) -> None:
         """Update the coordinates of a vertex, respecting its per-axis fixity.
 
         Parameters
         ----------
-        vkey : int
+        vkey
             The identifier of the vertex.
-        xyz : list of float
+        xyz
             The new XYZ coordinates.
-        constrained : bool, optional
-            If True, an axis is only updated if the vertex attribute ``x_fix``, ``y_fix`` or ``z_fix``
+        constrained
+            If True, an axis is only updated if the vertex attribute `x_fix`, `y_fix` or `z_fix`
             is not True (a missing attribute counts as False).
             If False, all three coordinates are updated.
 
@@ -55,12 +58,12 @@ class Mesh3gs(Mesh):
     # helpers - faces
     # --------------------------------------------------------------------------
 
-    def face_area(self, fkey):
+    def face_area(self, fkey: int) -> float:
         """Compute the vector area of a face.
 
         Parameters
         ----------
-        fkey : int
+        fkey
             The identifier of the face.
 
         Returns
@@ -71,19 +74,19 @@ class Mesh3gs(Mesh):
         """
         return length_vector(normal_polygon(self.face_coordinates(fkey), unitized=False))
 
-    def face_normal(self, fkey, unitized=True):
+    def face_normal(self, fkey: int, unitized: bool = True) -> Vector:
         """Compute the normal of a face.
 
         Parameters
         ----------
-        fkey : int
+        fkey
             The identifier of the face.
-        unitized : bool, optional
+        unitized
             If True, the normal is unitized.
 
         Returns
         -------
-        :class:`compas.geometry.Vector`
+        Vector
             The normal of the face. For a face with a zero vector area, the unitized cross product
             of its first two edges, which is always a unit vector.
 

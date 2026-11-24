@@ -2,9 +2,16 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
+from collections.abc import Callable
+from collections.abc import Hashable
+from collections.abc import Sequence
+
 from compas.geometry import dot_vectors
 
 from compas.colors import Color
+
+from compas.datastructures import Graph
+from compas.datastructures import VolMesh
 
 from compas_3gs.utilities.topology import pair_uv_to_hf
 
@@ -31,20 +38,23 @@ __all__ = ['get_index_colordict',
 # ******************************************************************************
 
 
-def get_index_colordict(key_list, color_scheme=None):
+def get_index_colordict(
+    key_list: Sequence[Hashable],
+    color_scheme: Callable[[float], tuple[int, int, int]] | None = None,
+) -> dict[Hashable, tuple[int, int, int]]:
     """Convert a list of keys to a dictionary of key-color pairs based on a color gradient scheme.
 
     Parameters
     ----------
-    key_list : list
+    key_list
         List of keys.
-    color_scheme : callable, optional
+    color_scheme
         A function that maps a float between 0 and 1 to an RGB tuple (0-255).
-        Default is ``Color.from_i(value).rgb255`` (blue to red).
+        Default is `Color.from_i(value).rgb255` (blue to red).
 
     Returns
     -------
-    c_dict : dict
+    dict[Hashable, tuple[int, int, int]]
         Dictionary of key-color pairs, from lowest to highest based on a color gradient scheme.
 
     """
@@ -65,20 +75,23 @@ def get_index_colordict(key_list, color_scheme=None):
     return c_dict
 
 
-def valuedict_to_colordict(value_dict, color_scheme=None):
+def valuedict_to_colordict(
+    value_dict: dict[Hashable, float],
+    color_scheme: Callable[[float], tuple[int, int, int]] | None = None,
+) -> dict[Hashable, tuple[int, int, int]]:
     """Convert a dictionary of key-value pairs to a dictionary of key-color pairs.
 
     Parameters
     ----------
-    value_dict : dict
+    value_dict
         Dictionary of key-value pairs.
-    color_scheme : callable, optional
+    color_scheme
         A function that maps a float between 0 and 1 to an RGB tuple (0-255).
-        Default is ``Color.from_i(value).rgb255`` (blue to red).
+        Default is `Color.from_i(value).rgb255` (blue to red).
 
     Returns
     -------
-    c_dict : dict
+    dict[Hashable, tuple[int, int, int]]
         Dictionary of key-color pairs, from lowest to highest based on a color gradient scheme.
 
     """
@@ -96,24 +109,26 @@ def valuedict_to_colordict(value_dict, color_scheme=None):
     return c_dict
 
 
-def compare_initial_current(current_value_dict,
-                            initial_value_dict,
-                            color_scheme=None):
+def compare_initial_current(
+    current_value_dict: dict[Hashable, float],
+    initial_value_dict: dict[Hashable, float],
+    color_scheme: Callable[[float], tuple[int, int, int]] | None = None,
+) -> dict[Hashable, tuple[int, int, int]]:
     """Convert the ratios of current to initial values to a dictionary of key-color pairs.
 
     Parameters
     ----------
-    current_value_dict : dict
+    current_value_dict
         Dictionary of key-value pairs of the current values.
-    initial_value_dict : dict
+    initial_value_dict
         Dictionary of key-value pairs of the initial values.
-    color_scheme : callable, optional
+    color_scheme
         A function that maps a float to an RGB tuple (0-255).
-        Default is ``Color.from_i(value).rgb255`` (blue to red).
+        Default is `Color.from_i(value).rgb255` (blue to red).
 
     Returns
     -------
-    color_dict : dict
+    dict[Hashable, tuple[int, int, int]]
         Dictionary of key-color pairs, for the keys with a current value larger than 0.01.
 
     """
@@ -176,10 +191,12 @@ def get_force_mags(volmesh, network):
     return mags
 
 
-def get_force_colors_uv(volmesh,
-                        network,
-                        gradient=False,
-                        tol=0.001):
+def get_force_colors_uv(
+    volmesh: VolMesh,
+    network: Graph,
+    gradient: bool = False,
+    tol: float = 0.001,
+) -> dict[tuple[int, int], tuple[int, int, int]]:
     """Returns a dictionary of (u,v)-color pairs.
     Blue means compression, and red means tension.
     """
@@ -218,12 +235,14 @@ def get_force_colors_uv(volmesh,
     return c_dict
 
 
-def get_force_colors_hf(volmesh,
-                        network,
-                        uv_c_dict=None,
-                        gradient=False,
-                        boundary=False,
-                        tol=0.001):
+def get_force_colors_hf(
+    volmesh: VolMesh,
+    network: Graph,
+    uv_c_dict: dict[tuple[int, int], tuple[int, int, int]] | None = None,
+    gradient: bool = False,
+    boundary: bool = False,
+    tol: float = 0.001,
+) -> dict[int, tuple[int, int, int]]:
     """Returns a dictionary of hfkey-color pairs.
     """
     uv_hf_dict = pair_uv_to_hf(network, volmesh)

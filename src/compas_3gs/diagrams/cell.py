@@ -2,6 +2,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from typing import Any
+
 from compas.geometry import centroid_polyhedron
 
 from compas_3gs.datastructures import Mesh3gs
@@ -15,7 +17,7 @@ class Cell(Mesh3gs):
 
     """
 
-    def __init__(self, *args, name="Cell", **kwargs):
+    def __init__(self, *args: Any, name: str = "Cell", **kwargs: Any) -> None:
         super().__init__(*args, name=name, **kwargs)
 
         self.default_vertex_attributes.update({
@@ -36,12 +38,12 @@ class Cell(Mesh3gs):
     # misc
     # --------------------------------------------------------------------------
 
-    def cell_center(self):
+    def cell_center(self) -> list[float]:
         """Compute the volume centroid of the cell.
 
         Returns
         -------
-        list of float
+        list[float]
             The XYZ coordinates of the centroid of the polyhedron.
 
         """
