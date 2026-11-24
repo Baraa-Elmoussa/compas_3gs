@@ -1,4 +1,6 @@
 
+from typing import TYPE_CHECKING
+
 from compas.geometry import cross_vectors
 from compas.geometry import subtract_vectors
 from compas.geometry import normalize_vector
@@ -14,6 +16,9 @@ from compas.geometry import distance_point_point
 from compas.geometry import intersection_line_line
 from compas.geometry import is_point_on_segment
 from compas.geometry import project_point_plane
+
+if TYPE_CHECKING:
+    from compas_3gs.diagrams import Cell
 
 
 __all__ = ['resultant_vector',
@@ -348,24 +353,25 @@ def is_polygon_self_intersecting(polygon):
 # ******************************************************************************
 
 
-def cell_face_flatness(cell):
+def cell_face_flatness(cell: "Cell") -> dict[int, float]:
     """Compute the flatness of every face of a mesh.
 
     Parameters
     ----------
-    cell : Mesh
+    cell
         Cell as a mesh object.
 
     Returns
     -------
-    dict
-        A dictionary of flatness deviation for every face of the mesh.
+    dict[int, float]
+        A dictionary of flatness deviation for every face of the mesh: the largest distance
+        of a face vertex to the best-fit plane of the face.
 
     """
 
-    flatness_dict = {fkey: 0 for fkey in cell.face}
+    flatness_dict = {fkey: 0 for fkey in cell.faces()}
 
-    for fkey in cell.face:
+    for fkey in cell.faces():
         f_vkeys = cell.face_vertices(fkey)
         f_pts = [cell.vertex_coordinates(vkey) for vkey in f_vkeys]
         dev = polygon_flatness(f_pts)
@@ -375,19 +381,19 @@ def cell_face_flatness(cell):
     return flatness_dict
 
 
-def cell_face_areaness(cell, target_areas):
+def cell_face_areaness(cell: "Cell", target_areas: dict[int, float]) -> dict[int, float]:
     """Compute the areaness of every face of a mesh.
 
     Parameters
     ----------
-    cell : Mesh
+    cell
         Cell as a mesh object.
-    target_areas : dict
+    target_areas
         Dictionary of target areas.
 
     Returns
     -------
-    dict
+    dict[int, float]
         A dictionary of area deviation for each face of the mesh.
 
     """

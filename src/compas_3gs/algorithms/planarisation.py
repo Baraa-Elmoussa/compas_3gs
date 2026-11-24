@@ -1,4 +1,8 @@
 
+from collections.abc import Callable
+from collections.abc import Sequence
+from typing import Any
+
 from compas.geometry import distance_point_point
 from compas.geometry import centroid_points
 from compas.geometry import dot_vectors
@@ -9,6 +13,9 @@ from compas_3gs.utilities import scale_polygon
 from compas_3gs.operations import cell_collapse_short_edge
 
 from compas_3gs.utilities import print_result
+
+from compas_3gs.datastructures import Mesh3gs
+from compas_3gs.diagrams import Cell
 
 
 __all__ = ['cell_planarise',
@@ -26,26 +33,26 @@ __all__ = ['cell_planarise',
 # ******************************************************************************
 
 
-def cell_planarise(cell,
-                   kmax=100,
+def cell_planarise(cell: Cell,
+                   kmax: int = 100,
 
-                   target_centers={},
-                   target_normals={},
-                   target_areas={},
+                   target_centers: dict[int, Sequence[float]] | None = None,
+                   target_normals: dict[int, Sequence[float]] | None = None,
+                   target_areas: dict[int, float] | None = None,
 
-                   fix_vkeys=[],
+                   fix_vkeys: list[int] | None = None,
 
-                   avg_fkeys=[],
+                   avg_fkeys: list[int] | None = None,
 
-                   collapse_edge_length=0.1,
+                   collapse_edge_length: float = 0.1,
 
-                   tolerance_flat=0.001,
-                   tolerance_area=0.001,
+                   tolerance_flat: float = 0.001,
+                   tolerance_area: float = 0.001,
 
-                   callback=None,
-                   callback_args=None,
+                   callback: Callable | None = None,
+                   callback_args: Any = None,
 
-                   print_result_info=False):
+                   print_result_info: bool = False) -> None:
     """Planarise the faces of a cell.
 
     Planarisation of a cell is implemented as a three-step iterative procedure.
@@ -55,58 +62,52 @@ def cell_planarise(cell,
 
     Parameters
     ----------
-
-    cell : Mesh
-        A mesh object
-
-    kmax : int, optional [100]
+    cell
+        A cell.
+    kmax
         Number of iterations.
-
-    target_face_areas : dictionary, optional [{}]
-        A dictionary of fkeys and target areas.
-    target_face_normals : dictionary, optional [{}]
-        A dictionary of fkeys and target face normals.
-    target_face_centers : dictionary, optional [{}]
+    target_centers
         A dictionary of fkeys and target face centers.
-
-    fix_vkeys : list, optional [[]]
+    target_normals
+        A dictionary of fkeys and target face normals.
+    target_areas
+        A dictionary of fkeys and target areas.
+    fix_vkeys
         List of vkeys to omit from arearisation.
-
-    avg_fkeys : list, optional [[]]
+    avg_fkeys
         List of fkeys to average areas.
-
-    collapse_edge_length : real, optional [0.1]
+    collapse_edge_length
         Minimum length of edge to collapse.
-
-    tolerance_flat: float, optional
-        Convergence tolerance for face flatness.
-    tolerance_area: float, optional
-        Convergence tolerance for face areas.
-
-    callback : callable, optional
-        A user-defined callback function to be executed after every iteration.
-        Default is ``None``.
-    callback_args : tuple, optional
+    tolerance_flat
+        Convergence tolerance for face flatness, a length: the largest distance of a vertex to its projection plane.
+    tolerance_area
+        Convergence tolerance for face areas, an area: the largest difference between a face area and its target.
+    callback
+        A user-defined callback function to be executed after every iteration,
+        called as `callback(cell, k, callback_args)`.
+    callback_args
         Additional parameters to be passed to the callback.
-        Default is ``None``.
 
     Raises
     ------
     Exception
         If a callback is provided, but it is not callable.
 
-    .. seealso ::
-        `compas.geometry.mesh_planarize_faces`
-
     """
     if callback:
         if not callable(callback):
             raise Exception('Callback is not callable.')
 
+    target_centers = target_centers or {}
+    target_normals = target_normals or {}
+    target_areas = target_areas or {}
+    fix_vkeys = fix_vkeys or []
+    avg_fkeys = avg_fkeys or []
+
     # --------------------------------------------------------------------------
     #   1. initialise
     # --------------------------------------------------------------------------
-    free_vkeys = list(set(cell.vertex) - set(fix_vkeys))
+    free_vkeys = list(set(cell.vertices()) - set(fix_vkeys))
 
     # --------------------------------------------------------------------------
     #   2. loop
@@ -117,7 +118,7 @@ def cell_planarise(cell,
         deviation_area = 0
         deviation_perp = 0
 
-        new_xyz = {vkey: [] for vkey in cell.vertex}
+        new_xyz = {vkey: [] for vkey in cell.vertices()}
 
         # faces to be averaged -------------------------------------------------
         if avg_fkeys:
@@ -468,7 +469,7 @@ def _get_current_volmesh_normals(volmesh):
     return normal_dict
 
 
-def _avg_face_area(mesh, fkeys):
+def _avg_face_area(mesh: Mesh3gs, fkeys: list[int]) -> float:
     total_area = sum(mesh.face_area(fkey) for fkey in fkeys)
     return total_area / len(fkeys)
 

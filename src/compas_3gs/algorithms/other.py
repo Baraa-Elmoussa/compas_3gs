@@ -1,39 +1,39 @@
 
+from collections.abc import Callable
+
 
 __all__ = ['golden_section_search']
 
 
-def golden_section_search(function, a, b, tol=1e-3):
+def golden_section_search(function: Callable[[float], float], a: float, b: float, tol: float = 1e-3) -> float:
     """Golden section search algorithm for finding the minimum or maximum of a strictly unimodal function
     by successively narrowing the range of values inside which the extremum is known to exist.
 
     Parameters
     ----------
-    function : Function
+    function
         Evaluation function.
-    a : float
+    a
         Lower bound of the initial search interval.
-    b : float
+    b
         Upper bound of the initial search interval.
-    tol : float, optional
-        A tolerance for convergence.
-        Default is ``1e-6``.
+    tol
+        Convergence tolerance, an interval width: the search stops when the two interior points
+        are closer than `tol`.
 
     Returns
     -------
     float
-        The minimum or maximum value.
+        The location of the minimum, the midpoint of the final interval.
 
     Notes
     -----
-    Adapted after [1]_.
+    Adapted after the Wikipedia article *Golden section search*.
 
     References
     ----------
-    .. [1] Wikipedia *Golden section search*.
-           Available at: https://en.wikipedia.org/wiki/Golden-section_search
-
-    .. [2] Kiefer, J. (1953). Sequential minimax search for a maximum. In *Proceedings of the American Mathematical Society* 4(3).
+    - Wikipedia *Golden section search*. Available at: <https://en.wikipedia.org/wiki/Golden-section_search>
+    - Kiefer, J. (1953). Sequential minimax search for a maximum. In *Proceedings of the American Mathematical Society* 4(3).
 
     """
 
