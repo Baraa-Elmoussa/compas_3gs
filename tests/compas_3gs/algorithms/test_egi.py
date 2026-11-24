@@ -21,7 +21,9 @@ from compas.geometry import volume_polyhedron
 from compas.tolerance import TOL
 from compas_3gs import DATA
 from compas_3gs.algorithms import cell_from_egi
+from compas_3gs.algorithms import cell_from_forces
 from compas_3gs.algorithms import egi_from_vectors
+from compas_3gs.algorithms import truss_equilibrium
 from compas_3gs.diagrams import EGI
 from compas_3gs.diagrams import Cell
 
@@ -272,3 +274,58 @@ def test_cell_from_egi_tetrahedron():
     assert volume_polyhedron(cell.to_vertices_and_faces()) > 0
     for fkey in cell.faces():
         assert TOL.is_allclose(cell.face_normal(fkey), normalize_vector(TETRAHEDRON[fkey]))
+
+
+# ==============================================================================
+# cell_from_forces
+# ==============================================================================
+
+
+def test_cell_from_forces_box():
+    forces = {0: [3, 0, 0], 1: [-3, 0, 0], 2: [0, 2, 0], 3: [0, -2, 0], 4: [0, 0, 6], 5: [0, 0, -6]}
+    cell = cell_from_forces(forces, [0, 0, 0])
+
+    assert set(cell.faces()) == set(forces)
+    assert cell.is_closed()
+    assert volume_polyhedron(cell.to_vertices_and_faces()) > 0
+    for face, force in forces.items():
+        assert cell.face_area(face) == pytest.approx(max(abs(c) for c in force), rel=1e-3)
+        assert angle_vectors(cell.face_normal(face), force, deg=True) < 0.1
+
+
+def test_cell_from_forces_tripod_apex():
+    apex = [0.0, 0.0, 3.0]
+    feet = [[2.0 * cos(a), 2.0 * sin(a), 0.0] for a in (0, 2 * pi / 3, 4 * pi / 3)]
+    load = [1.5, 0.0, -10.0]
+    result = truss_equilibrium([apex] + feet, [(0, 1), (0, 2), (0, 3)], {0: load}, {1: "xyz", 2: "xyz", 3: "xyz"})
+    forces = {i: [force * c for c in normalize_vector(subtract_vectors(foot, apex))] for i, (foot, force) in enumerate(zip(feet, result.forces))}
+    forces[3] = load
+
+    cell = cell_from_forces(forces, apex)
+
+    assert cell.number_of_faces() == 4
+    assert volume_polyhedron(cell.to_vertices_and_faces()) > 0
+    for face, force in forces.items():
+        assert cell.face_area(face) == pytest.approx(distance_point_point(force, [0, 0, 0]), rel=1e-3)
+        assert angle_vectors(cell.face_normal(face), force, deg=True) < 0.1
+
+
+def test_cell_from_forces_leaves_out_zero_forces():
+    forces = dict(TETRAHEDRON)
+    forces[7] = [0.0, 0.0, 0.0]
+    cell = cell_from_forces(forces, [0, 0, 0])
+    assert set(cell.faces()) == set(TETRAHEDRON)
+
+
+@pytest.mark.parametrize(
+    "forces, message",
+    [
+        ({0: [1, 0, 0], 1: [-1, 0, 0], 2: [0, 1, 0], 3: [0, 0, 0]}, "four or more"),
+        ({0: [1, 0, 0], 1: [2, 0, 0], 2: [0, 1, 0], 3: [0, -1, 0], 4: [-3, 0, 0]}, "same direction"),
+        ({i: [cos(2 * pi * i / 5), sin(2 * pi * i / 5), 0] for i in range(5)}, "one plane"),
+    ],
+    ids=["three-forces", "same-direction", "planar"],
+)
+def test_cell_from_forces_raises(forces, message):
+    with pytest.raises(ValueError, match=message):
+        cell_from_forces(forces, [0, 0, 0])

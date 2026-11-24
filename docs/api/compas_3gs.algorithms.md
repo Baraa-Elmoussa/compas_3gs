@@ -10,6 +10,10 @@
     options:
       heading_level: 3
 
+::: compas_3gs.algorithms.cell_from_forces
+    options:
+      heading_level: 3
+
 ## Duality
 
 ::: compas_3gs.algorithms.volmesh_dual_volmesh
@@ -49,6 +53,16 @@
       heading_level: 3
 
 ::: compas_3gs.algorithms.cellnetwork_ud
+    options:
+      heading_level: 3
+
+## Equilibrium
+
+::: compas_3gs.algorithms.EquilibriumResult
+    options:
+      heading_level: 3
+
+::: compas_3gs.algorithms.truss_equilibrium
     options:
       heading_level: 3
 

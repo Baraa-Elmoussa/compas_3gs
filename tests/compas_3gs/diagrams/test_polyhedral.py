@@ -46,8 +46,23 @@ def test_formnetwork_constructor():
     assert form.name == "FormNetwork"
     assert form.dual is None
     assert form.attributes == {"scale": 1}
-    assert form.default_node_attributes == {"x": 0.0, "y": 0.0, "z": 0.0, "is_fixed": False, "x_fix": False, "y_fix": False, "z_fix": False}
-    for name, value in {"l_min": 1, "l_max": 20, "target_vector": None, "target_length": None, "_a": 0.0}.items():
+    assert form.default_node_attributes == {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "is_fixed": False,
+        "x_fix": False,
+        "y_fix": False,
+        "z_fix": False,
+        "support": "",
+        "px": 0.0,
+        "py": 0.0,
+        "pz": 0.0,
+        "_rx": 0.0,
+        "_ry": 0.0,
+        "_rz": 0.0,
+    }
+    for name, value in {"l_min": 1, "l_max": 20, "target_vector": None, "target_length": None, "_a": 0.0, "_f": 0.0}.items():
         assert form.default_edge_attributes[name] == value
     assert FormNetwork(name="form").name == "form"
 
@@ -102,6 +117,9 @@ def test_formnetwork_roundtrip(form, how):
     form.node_attribute(0, "is_fixed", True)
     form.edge_attribute((0, 1), "target_length", 0.75)
     form.edge_attribute((0, 2), "target_vector", [1.0, 0.0, 0.0])
+    form.set_support(0, "slider")
+    form.add_force(7, [0.0, 0.0, -1.0])
+    form.edge_attribute((0, 1), "_f", -2.5)
 
     if how == "json":
         other = compas.json_loads(compas.json_dumps(form))
@@ -122,6 +140,58 @@ def test_formnetwork_roundtrip(form, how):
         assert other.node_attributes(node) == form.node_attributes(node)
     for edge in form.edges():
         assert other.edge_attributes(edge) == form.edge_attributes(edge)
+
+
+def test_node_at(form):
+    point = form.node_coordinates(5)
+    assert form.node_at(point) == 5
+    with pytest.raises(KeyError):
+        form.node_at([10.0, 10.0, 10.0])
+    with pytest.raises(KeyError):
+        form.node_at([point[0] + 0.01, point[1], point[2]])
+    assert form.node_at([point[0] + 0.01, point[1], point[2]], tol=0.1) == 5
+
+
+@pytest.mark.parametrize(
+    "dofs, stored",
+    [("pinned", "xyz"), ("slider", "xz"), ("roller", "z"), ("free", ""), ("zx", "xz"), ("y", "y"), ("xyz", "xyz")],
+)
+def test_set_support(form, dofs, stored):
+    form.set_support(3, dofs)
+    assert form.node_attribute(3, "support") == stored
+    assert list(form.supports()) == ([3] if stored else [])
+
+
+def test_set_support_rejects_other_names(form):
+    with pytest.raises(ValueError):
+        form.set_support(3, "fixed")
+
+
+def test_add_force_adds_up(form):
+    form.add_force(2, [1.0, 0.0, -2.0])
+    form.add_force(2, [0.5, 1.0, 0.0])
+    assert TOL.is_allclose(form.node_load(2), [1.5, 1.0, -2.0])
+    assert TOL.is_allclose(form.node_load(3), [0.0, 0.0, 0.0])
+
+
+def test_node_forces_directions_and_signs(form):
+    # node 0 is the corner cell of the grid; its neighbours are 1, 2 and 4
+    form.edge_attribute((0, 1), "_f", 2.0)  # tension pulls node 0 towards node 1
+    form.edge_attribute((0, 2), "_f", -3.0)  # compression pushes node 0 away from node 2
+    form.add_force(0, [0.0, 0.0, -1.0])
+    form.node_attributes(0, ["_rx", "_ry", "_rz"], [0.0, 0.0, 1.0])
+
+    forces = form.node_forces(0)
+
+    assert set(forces) == {(0, 1), (0, 2), (0, 4), "load", "reaction"}
+    towards_1 = [b - a for a, b in zip(form.node_coordinates(0), form.node_coordinates(1))]
+    towards_2 = [b - a for a, b in zip(form.node_coordinates(0), form.node_coordinates(2))]
+    assert TOL.is_allclose(forces[(0, 1)], [2.0 * c / 0.5 for c in towards_1])
+    assert TOL.is_allclose(forces[(0, 2)], [-3.0 * c / 0.5 for c in towards_2])
+    assert TOL.is_zero(forces[(0, 4)].length)
+    assert TOL.is_allclose(forces["load"], [0.0, 0.0, -1.0])
+    assert TOL.is_allclose(forces["reaction"], [0.0, 0.0, 1.0])
+    assert "load" not in form.node_forces(3)
 
 
 # ==============================================================================

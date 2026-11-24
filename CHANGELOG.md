@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added type hints and NumPy-style Markdown docstrings to the ported classes and functions.
 * Added `TODO.md` with the open design questions and the known compas 2.15.1 and compas_viewer 2.0.2 issues.
 * Added `pyproject.toml` and `tasks.py` with `compas_invocations2`.
+* Added supports, applied forces and member forces to `compas_3gs.diagrams.FormNetwork`: `node_at`, `set_support`, `add_force`, `supports`, `node_load`, `node_reaction`, `edge_force` and `node_forces`, stored in the attributes `support`, `px`, `py`, `pz`, `_rx`, `_ry`, `_rz` and `_f`.
+* Added `compas_3gs.algorithms.truss_equilibrium` and `EquilibriumResult`: member forces and support reactions of a pin-jointed truss from equilibrium.
+* Added `compas_3gs.algorithms.cell_from_forces`: the force polyhedron of a node from the forces on it.
 * Added tests for every module in `tests/compas_3gs/`, mirroring `src/`, with JSON round trips of the data structures, and `tests/test_examples.py`, which runs every example (marked `gui`).
 
 ### Changed

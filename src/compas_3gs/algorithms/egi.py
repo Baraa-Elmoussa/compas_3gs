@@ -18,7 +18,9 @@ from compas.tolerance import TOL
 from compas_3gs.diagrams import EGI
 from compas_3gs.diagrams import Cell
 
-__all__ = ["egi_from_vectors", "cell_from_egi"]
+from .planarisation import cell_planarise
+
+__all__ = ["egi_from_vectors", "cell_from_egi", "cell_from_forces"]
 
 
 def egi_from_vectors(vectordict: dict[int, Sequence[float]], origin: Sequence[float], tol: float | None = None) -> EGI:
@@ -261,6 +263,72 @@ def cell_from_egi(egi: EGI) -> Cell:
 
         cell.face_attribute(vkey, "type", egi.vertex_attribute(vkey, "type"))
 
+    return cell
+
+
+def cell_from_forces(
+    forces: dict[int, Sequence[float]],
+    origin: Sequence[float],
+    kmax: int = 2000,
+    tolerance_flat: float = 0.001,
+    tolerance_area: float = 0.0001,
+) -> Cell:
+    """Construct the force polyhedron of a node from the forces that act on it.
+
+    Each force gives one face of the cell, with the direction of the force as its normal and the magnitude of the force as its area:
+    the EGI of the force directions gives the cell (`egi_from_vectors`, `cell_from_egi`), and `cell_planarise` sizes its faces.
+    Faces that come from crossings of the EGI arcs carry no force; their target area is zero.
+
+    Parameters
+    ----------
+    forces
+        The force vectors on the node, by integer key; the key becomes the face key of the cell.
+        Forces of zero length are left out.
+    origin
+        The location of the node.
+    kmax
+        The number of planarisation iterations.
+    tolerance_flat, tolerance_area
+        The convergence thresholds of `cell_planarise`.
+
+    Returns
+    -------
+    Cell
+
+    Raises
+    ------
+    ValueError
+        If fewer than four forces are not zero, if two forces have the same direction,
+        or if all forces lie in one plane.
+
+    Examples
+    --------
+    >>> forces = {0: [1, 0, 0], 1: [-1, 0, 0], 2: [0, 1, 0], 3: [0, -1, 0], 4: [0, 0, 2], 5: [0, 0, -2]}
+    >>> cell = cell_from_forces(forces, [0, 0, 0])
+    >>> cell.number_of_faces()
+    6
+    >>> round(cell.face_area(4), 2)
+    2.0
+
+    """
+    vectors = {key: list(force) for key, force in forces.items() if not TOL.is_zero(length_vector(force))}
+    if len(vectors) < 4:
+        raise ValueError("A force polyhedron needs four or more forces, not {}.".format(len(vectors)))
+
+    directions = [normalize_vector(vector) for vector in vectors.values()]
+    for i, a in enumerate(directions):
+        for b in directions[i + 1 :]:
+            if dot_vectors(a, b) > 1 - TOL.approximation:  # the test of egi_from_vectors
+                raise ValueError("Two forces have the same direction.")
+    normal = next((cross_vectors(a, b) for a in directions for b in directions if length_vector(cross_vectors(a, b)) > TOL.angular), None)
+    if normal is None or all(abs(dot_vectors(normalize_vector(normal), c)) < TOL.angular for c in directions):
+        raise ValueError("The forces lie in one plane.")
+
+    egi = egi_from_vectors(vectors, origin)
+    cell = cell_from_egi(egi)
+    target_areas = {face: length_vector(vectors[face]) if face in vectors else 0.0 for face in cell.faces()}
+    target_normals = {face: egi.vertex_attribute(face, "normal") for face in cell.faces()}
+    cell_planarise(cell, kmax=kmax, target_areas=target_areas, target_normals=target_normals, tolerance_flat=tolerance_flat, tolerance_area=tolerance_area)
     return cell
 
 
