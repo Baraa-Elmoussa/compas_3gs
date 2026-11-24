@@ -1,10 +1,8 @@
-
 from typing import Any
 
 from compas_3gs.datastructures import Network3gs
 
-
-__all__ = ['CellNetwork']
+__all__ = ["CellNetwork"]
 
 
 class CellNetwork(Network3gs):
@@ -20,19 +18,25 @@ class CellNetwork(Network3gs):
 
         self.cells = {}
 
-        self.attributes.update({
-            'gfp': None,
-        })
-        self.default_node_attributes.update({
-            'x_fix': False,
-            'y_fix': False,
-            'z_fix': False,
-            'cell': None,
-        })
-        self.default_edge_attributes.update({
-            'target_vector': None,
-            'target_length': None,
-        })
+        self.attributes.update(
+            {
+                "gfp": None,
+            }
+        )
+        self.default_node_attributes.update(
+            {
+                "x_fix": False,
+                "y_fix": False,
+                "z_fix": False,
+                "cell": None,
+            }
+        )
+        self.default_edge_attributes.update(
+            {
+                "target_vector": None,
+                "target_length": None,
+            }
+        )
 
 
 # ******************************************************************************
@@ -46,5 +50,5 @@ class CellNetwork(Network3gs):
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

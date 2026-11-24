@@ -22,6 +22,9 @@ Run with the compas-3gs env:  python examples/physical_structures/30_force_first
 
 """
 
+from compas_viewer import Viewer
+from compas_viewer.scene import Tag
+
 from compas.colors import Color
 from compas.geometry import Line
 from compas.geometry import Translation
@@ -32,9 +35,6 @@ from compas.geometry import length_vector
 from compas.geometry import normalize_vector
 from compas.geometry import scale_vector
 from compas.geometry import subtract_vectors
-from compas_viewer import Viewer
-from compas_viewer.scene import Tag
-
 from compas_3gs.algorithms import volmesh_dual_network
 from compas_3gs.algorithms import volmesh_reciprocate
 from compas_3gs.diagrams import ForceVolMesh
@@ -67,7 +67,6 @@ cases = [
 ]
 
 for name, force, offset in cases:
-
     form = volmesh_dual_network(force, cls=FormNetwork)
     form.dual, force.primal = force, form  # volmesh_dual_network does not link them
     volmesh_reciprocate(force, form, kmax=500, weight=1.0, edge_min=0.1, edge_max=100, tolerance=0.001)

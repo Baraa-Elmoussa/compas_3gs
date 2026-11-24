@@ -8,14 +8,14 @@ crossings of the EGI arcs (zero faces) get a target area of 0.
 import json
 import os
 
+from compas_viewer import Viewer
+from compas_viewer.scene import Tag
+
 from compas.colors import Color
 from compas.geometry import Line
 from compas.geometry import Point
 from compas.geometry import add_vectors
 from compas.geometry import length_vector
-from compas_viewer import Viewer
-from compas_viewer.scene import Tag
-
 from compas_3gs import DATA
 from compas_3gs.algorithms import cell_from_egi
 from compas_3gs.algorithms import cell_planarise
@@ -63,13 +63,7 @@ def callback(cell, k, args):
         frames.append({vkey: cell.vertex_coordinates(vkey) for vkey in cell.vertices()})
 
 
-cell_planarise(cell,
-               kmax=KMAX,
-               target_areas=target_areas,
-               target_normals=target_normals,
-               collapse_edge_length=COLLAPSE_EDGE_LENGTH,
-               callback=callback,
-               print_result_info=True)
+cell_planarise(cell, kmax=KMAX, target_areas=target_areas, target_normals=target_normals, collapse_edge_length=COLLAPSE_EDGE_LENGTH, callback=callback, print_result_info=True)
 
 frames.append({vkey: cell.vertex_coordinates(vkey) for vkey in cell.vertices()})
 

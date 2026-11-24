@@ -1,44 +1,35 @@
-
 from collections.abc import Callable
 from typing import Any
 
 from compas.datastructures import Graph
 from compas.datastructures import VolMesh
-
+from compas.geometry import add_vectors
+from compas.geometry import angle_vectors
+from compas.geometry import centroid_points
+from compas.geometry import dot_vectors
+from compas.geometry import length_vector
 from compas.geometry import normalize_vector
 from compas.geometry import scale_vector
-from compas.geometry import add_vectors
-from compas.geometry import dot_vectors
-from compas.geometry import angle_vectors
-from compas.geometry import length_vector
-from compas.geometry import centroid_points
-
 from compas_3gs.algorithms import volmesh_planarise
-
 from compas_3gs.utilities import print_result
 
+__all__ = ["volmesh_reciprocate"]
 
-__all__ = ['volmesh_reciprocate']
 
-
-def volmesh_reciprocate(volmesh: VolMesh,
-                        formdiagram: Graph,
-
-                        kmax: int = 100,
-                        weight: float = 1.0,
-
-                        fix_vkeys: list[int] | None = None,
-
-                        edge_min: float = 0.1,
-                        edge_max: float = 10000,
-
-                        tolerance: float = 1.0,
-                        tolerance_boundary: float = 1.0,
-
-                        callback: Callable | None = None,
-                        callback_args: Any = None,
-
-                        print_result_info: bool = False) -> None:
+def volmesh_reciprocate(
+    volmesh: VolMesh,
+    formdiagram: Graph,
+    kmax: int = 100,
+    weight: float = 1.0,
+    fix_vkeys: list[int] | None = None,
+    edge_min: float = 0.1,
+    edge_max: float = 10000,
+    tolerance: float = 1.0,
+    tolerance_boundary: float = 1.0,
+    callback: Callable | None = None,
+    callback_args: Any = None,
+    print_result_info: bool = False,
+) -> None:
     """Perpendicularizes the faces of the polyhedral force diagram to the corresponding dual edges in the polyhedral form diagram.
 
     Parameters
@@ -85,7 +76,7 @@ def volmesh_reciprocate(volmesh: VolMesh,
 
     if callback:
         if not callable(callback):
-            raise Exception('Callback is not callable.')
+            raise Exception("Callback is not callable.")
 
     fix_vkeys = fix_vkeys or []
 
@@ -106,8 +97,7 @@ def volmesh_reciprocate(volmesh: VolMesh,
         face_normal = scale_vector(volmesh.halfface_normal(u_hfkey), weight)
         edge_vector = scale_vector(formdiagram.edge_direction((u, v)), 1 - weight)
         target = normalize_vector(add_vectors(face_normal, edge_vector))
-        target_vectors[(u, v)] = {'fkey': u_hfkey,
-                                  'target': target}
+        target_vectors[(u, v)] = {"fkey": u_hfkey, "target": target}
         target_normals[u_hfkey] = target
 
     for fkey in boundary_fkeys:
@@ -117,25 +107,23 @@ def volmesh_reciprocate(volmesh: VolMesh,
     #   2. loop
     # --------------------------------------------------------------------------
     for k in range(kmax):
-
         deviation_boundary_perp = 0
 
         # ----------------------------------------------------------------------
         #   3. update form diagram
         # ----------------------------------------------------------------------
         if weight != 0:
-
             new_form_xyz = {vkey: [] for vkey in formdiagram.nodes()}
 
             for u, v in target_vectors:
-                target_v = target_vectors[(u, v)]['target']
+                target_v = target_vectors[(u, v)]["target"]
                 edge_v = formdiagram.edge_vector((u, v))
 
                 # target edge length -------------------------------------------
                 length = length_vector(edge_v)
 
-                l_min = formdiagram.edge_attribute((u, v), 'l_min')
-                l_max = formdiagram.edge_attribute((u, v), 'l_max')
+                l_min = formdiagram.edge_attribute((u, v), "l_min")
+                l_max = formdiagram.edge_attribute((u, v), "l_max")
 
                 # min edge
                 if edge_min:
@@ -172,9 +160,7 @@ def volmesh_reciprocate(volmesh: VolMesh,
         # ----------------------------------------------------------------------
 
         if weight != 1:
-            volmesh_planarise(volmesh,
-                              kmax=1,
-                              target_normals=target_normals)
+            volmesh_planarise(volmesh, kmax=1, target_normals=target_normals)
 
         # boundary perpness
         for fkey in boundary_fkeys:
@@ -192,9 +178,8 @@ def volmesh_reciprocate(volmesh: VolMesh,
         perpness = _check_deviation(volmesh, formdiagram)
 
         if perpness < tolerance and deviation_boundary_perp < tolerance_boundary:
-
             if print_result_info:
-                print_result('Reciprocation', k, perpness)
+                print_result("Reciprocation", k, perpness)
 
             break
 
@@ -251,5 +236,5 @@ def _check_deviation(volmesh: VolMesh, network: Graph) -> float:
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

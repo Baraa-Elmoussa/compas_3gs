@@ -4,27 +4,23 @@ from itertools import groupby
 from compas.datastructures import Graph
 from compas.datastructures import Mesh
 from compas.datastructures import VolMesh
-
 from compas.geometry import Frame
 from compas.geometry import Scale
 from compas.geometry import centroid_points
 from compas.geometry import convex_hull
-
 from compas_3gs.operations import cell_merge_coplanar_adjacent_faces
 
-
-__all__ = ['point_reflection',
-
-           'volmesh_vertex_lift',
-           'volmesh_vertex_merge',
-
-           'volmesh_halfface_pinch',
-           'volmesh_halfface_extrude',
-           'volmesh_halfface_subdivide',
-           'volmesh_merge_adjacent_halffaces',
-
-           'volmesh_cell_split_vertex',
-           'volmesh_cell_subdivide_barycentric']
+__all__ = [
+    "point_reflection",
+    "volmesh_vertex_lift",
+    "volmesh_vertex_merge",
+    "volmesh_halfface_pinch",
+    "volmesh_halfface_extrude",
+    "volmesh_halfface_subdivide",
+    "volmesh_merge_adjacent_halffaces",
+    "volmesh_cell_split_vertex",
+    "volmesh_cell_subdivide_barycentric",
+]
 
 
 # ******************************************************************************
@@ -61,9 +57,9 @@ def point_reflection(datastructure: Graph | Mesh | VolMesh) -> None:
 
     """
     if isinstance(datastructure, Graph):
-        center = centroid_points(datastructure.nodes_attributes('xyz'))
+        center = centroid_points(datastructure.nodes_attributes("xyz"))
     else:
-        center = centroid_points(datastructure.vertices_attributes('xyz'))
+        center = centroid_points(datastructure.vertices_attributes("xyz"))
 
     datastructure.transform(Scale.from_factors([-1, -1, -1], frame=Frame(center, [1, 0, 0], [0, 1, 0])))
 
@@ -119,7 +115,7 @@ def volmesh_vertex_lift(volmesh: VolMesh, vkey: int, target_xyz: Sequence[float]
 
     # check if vertex is interior ----------------------------------------------
     if not volmesh.is_vertex_on_boundary(vkey):
-        raise Exception('This vertex is interior.')
+        raise Exception("This vertex is interior.")
 
     # add new, lifted vertex ---------------------------------------------------
     x, y, z = target_xyz
@@ -352,9 +348,9 @@ def volmesh_merge_adjacent_halffaces(volmesh: VolMesh, hfkeys: list[int]) -> Vol
     # check halffaces ----------------------------------------------------------
     for hfkey in hfkeys:
         if not volmesh.is_halfface_on_boundary(hfkey):
-            raise ValueError('Halfface {} is interior.'.format(hfkey))
+            raise ValueError("Halfface {} is interior.".format(hfkey))
     if not _are_halffaces_chained(volmesh, hfkeys):
-        raise ValueError('These halffaces are not chained.')
+        raise ValueError("These halffaces are not chained.")
     # --------------------------------------------------------------------------
     halffaces = [volmesh.halfface_vertices(hfkey) for hfkey in hfkeys]
     # --------------------------------------------------------------------------
@@ -518,5 +514,5 @@ def _are_halffaces_chained(volmesh: VolMesh, hfkeys: list[int]) -> bool:
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

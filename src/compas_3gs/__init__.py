@@ -16,21 +16,21 @@ compas_3gs
 
 """
 
-
 import os
 
+__author__ = [
+    "Juney Lee",
+]
+__copyright__ = "Copyright 2018 - Block Research Group, ETH Zurich"
+__license__ = "MIT License"
+__email__ = "juney.lee@arch.ethz.ch"
 
-__author__ = ['Juney Lee', ]
-__copyright__ = 'Copyright 2018 - Block Research Group, ETH Zurich'
-__license__ = 'MIT License'
-__email__ = 'juney.lee@arch.ethz.ch'
-
-__version__ = '0.6.0'
+__version__ = "0.6.0"
 
 
 HERE = os.path.dirname(__file__)
-HOME = os.path.abspath(os.path.join(HERE, '../..'))
-DATA = os.path.abspath(os.path.join(HERE, '../../data'))
-TEMP = os.path.abspath(os.path.join(HERE, '../../temp'))
+HOME = os.path.abspath(os.path.join(HERE, "../.."))
+DATA = os.path.abspath(os.path.join(HERE, "../../data"))
+TEMP = os.path.abspath(os.path.join(HERE, "../../temp"))
 
 __all__ = []

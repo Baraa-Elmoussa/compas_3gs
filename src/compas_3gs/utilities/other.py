@@ -1,27 +1,14 @@
-
 from collections.abc import Callable
 from collections.abc import Hashable
 from collections.abc import Sequence
 
-from compas.geometry import dot_vectors
-
 from compas.colors import Color
-
 from compas.datastructures import Graph
 from compas.datastructures import VolMesh
-
+from compas.geometry import dot_vectors
 from compas_3gs.utilities.topology import pair_uv_to_hf
 
-
-__all__ = ['get_index_colordict',
-           'valuedict_to_colordict',
-           'compare_initial_current',
-
-           'get_force_mags',
-           'get_force_colors_uv',
-           'get_force_colors_hf',
-
-           'print_result']
+__all__ = ["get_index_colordict", "valuedict_to_colordict", "compare_initial_current", "get_force_mags", "get_force_colors_uv", "get_force_colors_hf", "print_result"]
 
 
 # ******************************************************************************
@@ -58,9 +45,7 @@ def get_index_colordict(
     c_dict = {}
 
     if key_list:
-
         for index, key in enumerate(key_list):
-
             if len(key_list) == 1:
                 value = 1
             else:
@@ -98,7 +83,6 @@ def valuedict_to_colordict(
     ub = max(value_dict.values())
 
     for key in value_dict:
-
         value = (value_dict[key] - lb) / (ub - lb)
         color = color_scheme(value) if color_scheme else Color.from_i(max(0.0, min(1.0, value))).rgb255
         c_dict[key] = color
@@ -132,12 +116,10 @@ def compare_initial_current(
     color_dict = {}
 
     for key in current_value_dict:
-
         current = current_value_dict[key]
         initial = initial_value_dict[key]
 
         if current > 0.01:
-
             if initial < 0.01:
                 value = 0
             else:
@@ -181,7 +163,7 @@ def get_force_mags(volmesh, network):
         if dot > 0:
             factor = 1
 
-        force = face_area * factor * volmesh.attributes['convention']
+        force = face_area * factor * volmesh.attributes["convention"]
 
         mags[(u, v)] = force
 
@@ -240,13 +222,10 @@ def get_force_colors_hf(
     boundary: bool = False,
     tol: float = 0.001,
 ) -> dict[int, tuple[int, int, int]]:
-    """Returns a dictionary of hfkey-color pairs.
-    """
+    """Returns a dictionary of hfkey-color pairs."""
     uv_hf_dict = pair_uv_to_hf(network, volmesh)
 
-    uv_c_dict = uv_c_dict or get_force_colors_uv(volmesh,
-                                                 network,
-                                                 gradient=gradient)
+    uv_c_dict = uv_c_dict or get_force_colors_uv(volmesh, network, gradient=gradient)
 
     # interior halffaces -------------------------------------------------------
     hf_c_dict = {}
@@ -261,8 +240,7 @@ def get_force_colors_hf(
     if boundary:
         b_hfkeys = volmesh.halffaces_on_boundaries()
         b_hf_areas = {hfkey: volmesh.halfface_area(hfkey) for hfkey in b_hfkeys}
-        b_hf_c_dict = valuedict_to_colordict(b_hf_areas,
-                                             color_scheme=lambda i: Color(1 - max(0.0, min(1.0, i)), 1.0, 1 - max(0.0, min(1.0, i))).rgb255)
+        b_hf_c_dict = valuedict_to_colordict(b_hf_areas, color_scheme=lambda i: Color(1 - max(0.0, min(1.0, i)), 1.0, 1 - max(0.0, min(1.0, i))).rgb255)
         for hfkey in b_hfkeys:
             hf_color = (0, 255, 0)
 
@@ -299,13 +277,13 @@ def print_result(name, k, deviation):
     """
     name = str(name)
 
-    print('===================================================================')
-    print('')
-    print(name, 'ended after', k, 'iterations.')
-    print('')
-    print('Max deviation :', deviation)
-    print('')
-    print('===================================================================')
+    print("===================================================================")
+    print("")
+    print(name, "ended after", k, "iterations.")
+    print("")
+    print("Max deviation :", deviation)
+    print("")
+    print("===================================================================")
 
 
 # ******************************************************************************
@@ -319,5 +297,5 @@ def print_result(name, k, deviation):
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

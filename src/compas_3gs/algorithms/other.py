@@ -1,8 +1,6 @@
-
 from collections.abc import Callable
 
-
-__all__ = ['golden_section_search']
+__all__ = ["golden_section_search"]
 
 
 def golden_section_search(function: Callable[[float], float], a: float, b: float, tol: float = 1e-3) -> float:
@@ -37,13 +35,12 @@ def golden_section_search(function: Callable[[float], float], a: float, b: float
 
     """
 
-    gr = (5 ** 0.5 + 1) / 2
+    gr = (5**0.5 + 1) / 2
 
     c = b - (b - a) / gr
     d = a + (b - a) / gr
 
     while abs(c - d) > tol:
-
         if function(c) < function(d):
             b = d
 
@@ -67,5 +64,5 @@ def golden_section_search(function: Callable[[float], float], a: float, b: float
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

@@ -8,10 +8,10 @@ import json
 import os
 import random
 
-from compas.colors import Color
-from compas.geometry import add_vectors
 from compas_viewer import Viewer
 
+from compas.colors import Color
+from compas.geometry import add_vectors
 from compas_3gs import DATA
 from compas_3gs.algorithms import cell_planarise
 from compas_3gs.diagrams import Cell
@@ -44,17 +44,12 @@ frames = []
 
 def callback(cell, k, args):
     current_flatness = cell_face_flatness(cell)
-    facecolor = compare_initial_current(current_flatness,
-                                        initial_flatness,
-                                        color_scheme=lambda i: Color(1.0, 1 - min(1.0, i), 1 - min(1.0, i)).rgb255)
+    facecolor = compare_initial_current(current_flatness, initial_flatness, color_scheme=lambda i: Color(1.0, 1 - min(1.0, i), 1 - min(1.0, i)).rgb255)
     xyz = {vkey: cell.vertex_coordinates(vkey) for vkey in cell.vertices()}
     frames.append((xyz, facecolor))
 
 
-cell_planarise(cell,
-               kmax=KMAX,
-               callback=callback,
-               print_result_info=True)
+cell_planarise(cell, kmax=KMAX, callback=callback, print_result_info=True)
 
 print("max flatness:", round(max(initial_flatness.values()), 4), "->", round(max(cell_face_flatness(cell).values()), 6))
 

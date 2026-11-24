@@ -1,23 +1,16 @@
-
 from compas.datastructures import Graph
 from compas.datastructures import VolMesh
-
-from compas.geometry import convex_hull
 from compas.geometry import add_vectors
 from compas.geometry import centroid_points
+from compas.geometry import convex_hull
 from compas.geometry import scale_vector
 from compas.geometry import subtract_vectors
-
 from compas.tolerance import TOL
 
-
-__all__ = ['volmesh_ud',
-           'cellnetwork_ud']
+__all__ = ["volmesh_ud", "cellnetwork_ud"]
 
 
-def volmesh_ud(volmesh: VolMesh,
-               network: Graph,
-               scale: float = 0.5) -> tuple[dict[int, dict], dict[tuple[int, int], dict]]:
+def volmesh_ud(volmesh: VolMesh, network: Graph, scale: float = 0.5) -> tuple[dict[int, dict], dict[tuple[int, int], dict]]:
     """Computes temporary vertex coordinates for every halfface of a volmesh, for the visualisation of the unified diagram.
 
     Parameters
@@ -120,7 +113,7 @@ def volmesh_ud(volmesh: VolMesh,
         vertices = [list(xyz) for gkey, xyz in gkey_xyz.items()]
         scaled_faces = [[gkey_index[gkey] for gkey in face] for face in faces]
 
-        cells[cell] = {'vertices': vertices, 'faces': scaled_faces}
+        cells[cell] = {"vertices": vertices, "faces": scaled_faces}
 
     # cells = {}
     # for cell in volmesh.cells():
@@ -148,7 +141,7 @@ def volmesh_ud(volmesh: VolMesh,
         v_pts = scaled_halffaces[v_hfkey]
         pts = u_pts + v_pts
         prism = convex_hull(pts)  # face as indices of pt_list
-        prism_cells[(u, v)] = {'vertices': pts, 'faces': prism}
+        prism_cells[(u, v)] = {"vertices": pts, "faces": prism}
 
     # for u, v in network.edges():
     #     u_hfkey, v_hfkey = volmesh.cell_pair_halffaces(u, v)
@@ -184,5 +177,5 @@ def cellnetwork_ud(cellnetwork):
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

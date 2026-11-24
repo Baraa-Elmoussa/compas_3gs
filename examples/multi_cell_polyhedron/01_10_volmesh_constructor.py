@@ -3,14 +3,14 @@
 import json
 import os
 
+from compas_viewer import Viewer
+from compas_viewer.scene import Tag
+
 from compas.colors import Color
 from compas.geometry import Point
 from compas.geometry import bounding_box
 from compas.geometry import centroid_points
 from compas.geometry import distance_point_point
-from compas_viewer import Viewer
-from compas_viewer.scene import Tag
-
 from compas_3gs import DATA
 from compas_3gs.diagrams import ForceVolMesh
 

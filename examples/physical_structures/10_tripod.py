@@ -16,6 +16,9 @@ Run with the compas-3gs env:  python examples/physical_structures/10_tripod.py
 """
 
 import numpy as np
+from compas_viewer import Viewer
+from compas_viewer.scene import Tag
+
 from compas.colors import Color
 from compas.geometry import Line
 from compas.geometry import Point
@@ -26,9 +29,6 @@ from compas.geometry import length_vector
 from compas.geometry import normalize_vector
 from compas.geometry import scale_vector
 from compas.geometry import subtract_vectors
-from compas_viewer import Viewer
-from compas_viewer.scene import Tag
-
 from compas_3gs.algorithms import cell_from_egi
 from compas_3gs.algorithms import cell_planarise
 from compas_3gs.algorithms import egi_from_vectors

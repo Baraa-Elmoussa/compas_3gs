@@ -82,19 +82,17 @@ Unified Diagram
 
 """
 
-
 from .arearisation import cell_arearise_face
-from .duality import volmesh_dual_volmesh
 from .duality import volmesh_dual_network
-from .egi import egi_from_vectors
+from .duality import volmesh_dual_volmesh
 from .egi import cell_from_egi
+from .egi import egi_from_vectors
 from .other import golden_section_search
 from .planarisation import cell_planarise
 from .planarisation import volmesh_planarise
 from .reciprocation import volmesh_reciprocate
-from .unifieddiagram import volmesh_ud
 from .unifieddiagram import cellnetwork_ud
-
+from .unifieddiagram import volmesh_ud
 
 __all__ = [
     "cell_arearise_face",

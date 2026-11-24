@@ -1,15 +1,11 @@
-
 from typing import Any
 from typing import Self
 
 from compas.datastructures import VolMesh
-
+from compas.geometry import add_vectors
 from compas_3gs.datastructures import Mesh3gs
 
-from compas.geometry import add_vectors
-
-
-__all__ = ['EGI']
+__all__ = ["EGI"]
 
 
 class EGI(Mesh3gs):
@@ -22,17 +18,21 @@ class EGI(Mesh3gs):
     def __init__(self, *args: Any, name: str = "EGI", **kwargs: Any) -> None:
         super().__init__(*args, name=name, **kwargs)
 
-        self.attributes.update({
-            'origin': (0, 0, 0),
-        })
-        self.default_vertex_attributes.update({
-            'x_fix': False,
-            'y_fix': False,
-            'z_fix': False,
-            'type': None,
-            'normal': None,
-            'target_area': None,
-        })
+        self.attributes.update(
+            {
+                "origin": (0, 0, 0),
+            }
+        )
+        self.default_vertex_attributes.update(
+            {
+                "x_fix": False,
+                "y_fix": False,
+                "z_fix": False,
+                "type": None,
+                "normal": None,
+                "target_area": None,
+            }
+        )
 
     # --------------------------------------------------------------------------
     #   constructors
@@ -58,7 +58,7 @@ class EGI(Mesh3gs):
         """
         egi = cls(name=str(ckey))
         origin = volmesh.cell_centroid(ckey)
-        egi.attributes['origin'] = origin
+        egi.attributes["origin"] = origin
 
         halffaces = volmesh.cell_faces(ckey)
         vertices = volmesh.cell_vertices(ckey)
@@ -89,5 +89,5 @@ class EGI(Mesh3gs):
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

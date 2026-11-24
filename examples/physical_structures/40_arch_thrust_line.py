@@ -22,15 +22,15 @@ Run with the compas-3gs env:  python examples/physical_structures/40_arch_thrust
 
 import math
 
+from compas_viewer import Viewer
+from compas_viewer.scene import Tag
+
 from compas.colors import Color
 from compas.geometry import Line
 from compas.geometry import Point
 from compas.geometry import Polygon
 from compas.geometry import Polyline
 from compas.geometry import intersection_segment_segment
-from compas_viewer import Viewer
-from compas_viewer.scene import Tag
-
 from compas_3gs.algorithms import egi_from_vectors
 
 RADIUS = 5.0  # centreline radius

@@ -1,11 +1,9 @@
-
 from collections.abc import Sequence
 from typing import Any
 
 from compas.datastructures import Graph
 
-
-__all__ = ['Network3gs']
+__all__ = ["Network3gs"]
 
 
 class Network3gs(Graph):
@@ -18,12 +16,13 @@ class Network3gs(Graph):
     def __init__(self, *args: Any, name: str = "Network3gs", **kwargs: Any) -> None:
         super().__init__(*args, name=name, **kwargs)
         self.dual = None
-        self.default_edge_attributes.update({
-            'lmin': 0.0,
-            'lmax': 1e+7,
-
-            '_a': 0.0,
-        })
+        self.default_edge_attributes.update(
+            {
+                "lmin": 0.0,
+                "lmax": 1e7,
+                "_a": 0.0,
+            }
+        )
 
     # --------------------------------------------------------------------------
     # helpers - vertices
@@ -106,5 +105,5 @@ class Network3gs(Graph):
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

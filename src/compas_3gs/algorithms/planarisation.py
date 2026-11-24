@@ -1,27 +1,19 @@
-
 from collections.abc import Callable
 from collections.abc import Sequence
 from typing import Any
 
-from compas.geometry import distance_point_point
+from compas.datastructures import VolMesh
 from compas.geometry import centroid_points
+from compas.geometry import distance_point_point
 from compas.geometry import dot_vectors
 from compas.geometry import project_point_plane
-
-from compas_3gs.utilities import scale_polygon
-
-from compas_3gs.operations import cell_collapse_short_edge
-
-from compas_3gs.utilities import print_result
-
-from compas.datastructures import VolMesh
-
 from compas_3gs.datastructures import Mesh3gs
 from compas_3gs.diagrams import Cell
+from compas_3gs.operations import cell_collapse_short_edge
+from compas_3gs.utilities import print_result
+from compas_3gs.utilities import scale_polygon
 
-
-__all__ = ['cell_planarise',
-           'volmesh_planarise']
+__all__ = ["cell_planarise", "volmesh_planarise"]
 
 
 # ******************************************************************************
@@ -35,26 +27,21 @@ __all__ = ['cell_planarise',
 # ******************************************************************************
 
 
-def cell_planarise(cell: Cell,
-                   kmax: int = 100,
-
-                   target_centers: dict[int, Sequence[float]] | None = None,
-                   target_normals: dict[int, Sequence[float]] | None = None,
-                   target_areas: dict[int, float] | None = None,
-
-                   fix_vkeys: list[int] | None = None,
-
-                   avg_fkeys: list[int] | None = None,
-
-                   collapse_edge_length: float = 0.1,
-
-                   tolerance_flat: float = 0.001,
-                   tolerance_area: float = 0.001,
-
-                   callback: Callable | None = None,
-                   callback_args: Any = None,
-
-                   print_result_info: bool = False) -> None:
+def cell_planarise(
+    cell: Cell,
+    kmax: int = 100,
+    target_centers: dict[int, Sequence[float]] | None = None,
+    target_normals: dict[int, Sequence[float]] | None = None,
+    target_areas: dict[int, float] | None = None,
+    fix_vkeys: list[int] | None = None,
+    avg_fkeys: list[int] | None = None,
+    collapse_edge_length: float = 0.1,
+    tolerance_flat: float = 0.001,
+    tolerance_area: float = 0.001,
+    callback: Callable | None = None,
+    callback_args: Any = None,
+    print_result_info: bool = False,
+) -> None:
     """Planarise the faces of a cell.
 
     Planarisation of a cell is implemented as a three-step iterative procedure.
@@ -98,7 +85,7 @@ def cell_planarise(cell: Cell,
     """
     if callback:
         if not callable(callback):
-            raise Exception('Callback is not callable.')
+            raise Exception("Callback is not callable.")
 
     target_centers = target_centers or {}
     target_normals = target_normals or {}
@@ -115,7 +102,6 @@ def cell_planarise(cell: Cell,
     #   2. loop
     # --------------------------------------------------------------------------
     for k in range(kmax):
-
         deviation_flat = 0
         deviation_area = 0
         deviation_perp = 0
@@ -127,7 +113,6 @@ def cell_planarise(cell: Cell,
             avg_face_area = _avg_face_area(cell, avg_fkeys)
 
         for fkey in cell.faces():
-
             # evaluate current face --------------------------------------------
             f_vkeys = cell.face_vertices(fkey)
             f_v_xyz = cell.face_coordinates(fkey)
@@ -205,18 +190,13 @@ def cell_planarise(cell: Cell,
             cell.vertex_update_xyz(vkey, final_xyz)
 
         for u, v in cell.edges():
-            cell_collapse_short_edge(cell,
-                                     u,
-                                     v,
-                                     min_length=collapse_edge_length)
+            cell_collapse_short_edge(cell, u, v, min_length=collapse_edge_length)
 
         # ----------------------------------------------------------------------
         #   7. check convergence
         # ----------------------------------------------------------------------
         if deviation_flat < tolerance_flat and deviation_area < tolerance_area:
-
             if print_result_info:
-
                 name = "Cell planarisation"
                 deviation = deviation_flat
 
@@ -244,29 +224,24 @@ def cell_planarise(cell: Cell,
 # ******************************************************************************
 
 
-def volmesh_planarise(volmesh: VolMesh,
-                      kmax: int = 100,
-
-                      target_centers: dict[int, Sequence[float]] | None = None,
-                      target_normals: dict[int, Sequence[float]] | None = None,
-                      target_areas: dict[int, float] | None = None,
-
-                      fix_vkeys: list[int] | None = None,
-
-                      fix_boundary_normals: bool = False,
-                      fix_all_normals: bool = False,
-
-                      min_area: float | None = None,
-                      max_area: float | None = None,
-
-                      tolerance_flat: float = 0.001,
-                      tolerance_area: float = 0.001,
-                      tolerance_perp: float = 0.001,
-
-                      callback: Callable | None = None,
-                      callback_args: Any = None,
-
-                      print_result_info: bool = False) -> None:
+def volmesh_planarise(
+    volmesh: VolMesh,
+    kmax: int = 100,
+    target_centers: dict[int, Sequence[float]] | None = None,
+    target_normals: dict[int, Sequence[float]] | None = None,
+    target_areas: dict[int, float] | None = None,
+    fix_vkeys: list[int] | None = None,
+    fix_boundary_normals: bool = False,
+    fix_all_normals: bool = False,
+    min_area: float | None = None,
+    max_area: float | None = None,
+    tolerance_flat: float = 0.001,
+    tolerance_area: float = 0.001,
+    tolerance_perp: float = 0.001,
+    callback: Callable | None = None,
+    callback_args: Any = None,
+    print_result_info: bool = False,
+) -> None:
     """Planarises the halffaces of a volmesh.
 
     Planarisation of a volmesh is implemented as a three-step iterative procedure.
@@ -320,7 +295,7 @@ def volmesh_planarise(volmesh: VolMesh,
     """
     if callback:
         if not callable(callback):
-            raise Exception('Callback is not callable.')
+            raise Exception("Callback is not callable.")
 
     target_centers = target_centers or {}
     target_normals = target_normals or {}
@@ -338,7 +313,6 @@ def volmesh_planarise(volmesh: VolMesh,
     #   2. loop
     # --------------------------------------------------------------------------
     for k in range(kmax):
-
         deviation_flat = 0
         deviation_area = 0
         deviation_perp = 0
@@ -346,7 +320,6 @@ def volmesh_planarise(volmesh: VolMesh,
         new_xyz = {vkey: [] for vkey in volmesh.vertices()}
 
         for fkey in volmesh.faces():
-
             fkey_pair = volmesh.halfface_opposite_halfface(fkey)
 
             # evaluate current face --------------------------------------------
@@ -375,9 +348,9 @@ def volmesh_planarise(volmesh: VolMesh,
 
             if fix_boundary_normals:
                 if fkey in boundary_fkeys:
-                    f_normal = initial_normals[fkey]['normal']
+                    f_normal = initial_normals[fkey]["normal"]
             if fix_all_normals:
-                f_normal = initial_normals[fkey]['normal']
+                f_normal = initial_normals[fkey]["normal"]
 
             # projection plane -------------------------------------------------
             plane = (f_center, f_normal)
@@ -427,9 +400,7 @@ def volmesh_planarise(volmesh: VolMesh,
         #   6. check convergence
         # ----------------------------------------------------------------------
         if deviation_flat < tolerance_flat and deviation_area < tolerance_area and deviation_perp < tolerance_perp:
-
             if print_result_info:
-
                 name = "Volmesh planarisation"
                 deviation = deviation_flat
 
@@ -462,7 +433,7 @@ def _get_current_volmesh_normals(volmesh: VolMesh) -> dict[int, dict]:
     for hfkey in volmesh.halffaces():
         center = volmesh.halfface_center(hfkey)
         normal = volmesh.halfface_normal(hfkey)
-        normal_dict[hfkey] = {'normal': normal, 'center': center}
+        normal_dict[hfkey] = {"normal": normal, "center": center}
     return normal_dict
 
 
@@ -482,5 +453,5 @@ def _avg_face_area(mesh: Mesh3gs, fkeys: list[int]) -> float:
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

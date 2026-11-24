@@ -1,17 +1,12 @@
-
 from compas.datastructures import Graph
 from compas.datastructures import VolMesh
-
 from compas.geometry import dot_vectors
 from compas.geometry import normal_polygon
 from compas.geometry import subtract_vectors
-
 from compas_3gs.datastructures import Network3gs
 from compas_3gs.datastructures import VolMesh3gs
 
-
-__all__ = ['volmesh_dual_volmesh',
-           'volmesh_dual_network']
+__all__ = ["volmesh_dual_volmesh", "volmesh_dual_network"]
 
 
 # ******************************************************************************
@@ -56,7 +51,7 @@ def volmesh_dual_volmesh(volmesh: VolMesh, cls: type[VolMesh] | None = None) -> 
         cls = VolMesh3gs
 
     # 1. make volmesh instance -------------------------------------------------
-    dual_volmesh = cls(name='volmesh_dual_volmesh')
+    dual_volmesh = cls(name="volmesh_dual_volmesh")
 
     # 2. add vertex for each cell ----------------------------------------------
     for cell in volmesh.cells():
@@ -72,13 +67,12 @@ def volmesh_dual_volmesh(volmesh: VolMesh, cls: type[VolMesh] | None = None) -> 
     int_vkeys = list(set(volmesh.vertices()) - set(ext_vkeys))
 
     if len(int_vkeys) < 1:
-        raise Exception('Not enough cells to create a dual volmesh.')
+        raise Exception("Not enough cells to create a dual volmesh.")
 
     # 4. for each interior vertex, find neighbors ------------------------------
     for u in int_vkeys:
         cell_halffaces = []
         for v in volmesh.vertex_neighbors(u):
-
             # walk around the edge: the face of a cell with halfedge (u, v) leads to the next cell
             # (edge_cells lists the cells around the edge, but not in cyclic order)
             uv_halfface = {volmesh.halfface_cell(hfkey): hfkey for hfkey in volmesh.edge_halffaces((u, v))}
@@ -160,5 +154,5 @@ def volmesh_dual_network(volmesh: VolMesh, cls: type[Graph] | None = None) -> Gr
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

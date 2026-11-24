@@ -9,20 +9,20 @@ The smallest force is drawn white, so the background is grey.
 import json
 import os
 
+from compas_viewer import Viewer
+
 from compas.colors import Color
 from compas.datastructures import Mesh
 from compas.geometry import Line
 from compas.geometry import bounding_box
 from compas.geometry import centroid_points
 from compas.geometry import distance_point_point
-from compas_viewer import Viewer
-
 from compas_3gs import DATA
 from compas_3gs.algorithms import volmesh_dual_network
 from compas_3gs.algorithms import volmesh_reciprocate
 from compas_3gs.algorithms import volmesh_ud
-from compas_3gs.diagrams import FormNetwork
 from compas_3gs.diagrams import ForceVolMesh
+from compas_3gs.diagrams import FormNetwork
 from compas_3gs.utilities import get_force_colors_uv
 
 OFFSET = 2
@@ -56,13 +56,7 @@ for node in formdiagram.nodes():
 formdiagram.update_angle_deviations()
 initial_deviation = max(formdiagram.edges_attribute("_a"))
 
-volmesh_reciprocate(forcediagram,
-                    formdiagram,
-                    kmax=KMAX,
-                    weight=1,
-                    edge_min=0.5,
-                    edge_max=20,
-                    tolerance=0.01)
+volmesh_reciprocate(forcediagram, formdiagram, kmax=KMAX, weight=1, edge_min=0.5, edge_max=20, tolerance=0.01)
 
 formdiagram.update_angle_deviations()
 print("max angle deviation:", round(initial_deviation, 2), "->", round(max(formdiagram.edges_attribute("_a")), 3), "deg")

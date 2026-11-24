@@ -1,4 +1,3 @@
-
 from collections.abc import Callable
 from collections.abc import Sequence
 from typing import Any
@@ -6,26 +5,15 @@ from typing import Any
 from compas.geometry import add_vectors
 from compas.geometry import dot_vectors
 from compas.geometry import scale_vector
-
 from compas_3gs.algorithms.other import golden_section_search
-
-from compas_3gs.operations import cell_split_indet_face_vertices
-from compas_3gs.operations import cell_relocate_face
-
 from compas_3gs.diagrams import Cell
+from compas_3gs.operations import cell_relocate_face
+from compas_3gs.operations import cell_split_indet_face_vertices
+
+__all__ = ["cell_arearise_face"]
 
 
-__all__ = ['cell_arearise_face']
-
-
-def cell_arearise_face(cell: Cell,
-                       fkey: int,
-                       target_area: float,
-
-                       tol: float = 1e-3,
-
-                       callback: Callable | None = None,
-                       callback_args: Any = None) -> None:
+def cell_arearise_face(cell: Cell, fkey: int, target_area: float, tol: float = 1e-3, callback: Callable | None = None, callback_args: Any = None) -> None:
     """Move a face of a cell along its normal until it reaches a target area.
 
     The indeterminate vertices of the face are split first. The distance to move the face is found
@@ -56,7 +44,7 @@ def cell_arearise_face(cell: Cell,
     """
     if callback:
         if not callable(callback):
-            raise Exception('Callback is not callable.')
+            raise Exception("Callback is not callable.")
 
     cell_split_indet_face_vertices(cell, fkey)
 
@@ -135,7 +123,7 @@ def _get_move_direction(cell: Cell, fkey: int) -> int:
     cell_relocate_face(cell, fkey, center, normal)
 
     if new_area == area:
-        raise Exception('Pulling this face will not change its area!')
+        raise Exception("Pulling this face will not change its area!")
 
     return move_dir
 
@@ -167,5 +155,5 @@ def _evaluate_new_face_area(cell: Cell, fkey: int, xyz: Sequence[float], init_no
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

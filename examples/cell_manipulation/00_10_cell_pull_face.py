@@ -6,11 +6,11 @@ The face moves to planes parallel to itself; its vertices slide along the neighb
 import json
 import os
 
+from compas_viewer import Viewer
+
 from compas.colors import Color
 from compas.geometry import add_vectors
 from compas.geometry import scale_vector
-from compas_viewer import Viewer
-
 from compas_3gs import DATA
 from compas_3gs.diagrams import Cell
 from compas_3gs.operations import cell_relocate_face

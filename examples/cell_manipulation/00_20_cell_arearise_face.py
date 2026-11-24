@@ -3,10 +3,10 @@
 import json
 import os
 
-from compas.colors import Color
-from compas.geometry import dot_vectors
 from compas_viewer import Viewer
 
+from compas.colors import Color
+from compas.geometry import dot_vectors
 from compas_3gs import DATA
 from compas_3gs.algorithms import cell_arearise_face
 from compas_3gs.diagrams import Cell

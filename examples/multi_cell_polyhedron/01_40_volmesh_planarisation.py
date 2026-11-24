@@ -8,13 +8,13 @@ while the run warps them a little. The fixed vertices are the black points.
 import json
 import os
 
+from compas_viewer import Viewer
+
 from compas.colors import Color
 from compas.geometry import Point
 from compas.geometry import bounding_box
 from compas.geometry import centroid_points
 from compas.geometry import distance_point_point
-from compas_viewer import Viewer
-
 from compas_3gs import DATA
 from compas_3gs.algorithms import volmesh_planarise
 from compas_3gs.diagrams import ForceVolMesh
@@ -48,9 +48,7 @@ def callback(forcediagram, k, args):
     if k % 10:
         return
     current_flatness = volmesh_face_flatness(forcediagram)
-    colors = compare_initial_current(current_flatness,
-                                     initial_flatness,
-                                     color_scheme=lambda i: Color(1.0, 1 - min(1.0, i), 1 - min(1.0, i)).rgb255)
+    colors = compare_initial_current(current_flatness, initial_flatness, color_scheme=lambda i: Color(1.0, 1 - min(1.0, i), 1 - min(1.0, i)).rgb255)
     # the colours are keyed by one halfface per face: give the opposite halfface the same colour
     facecolor = {}
     for hfkey, color in colors.items():
@@ -64,13 +62,7 @@ def callback(forcediagram, k, args):
 # the initial state
 callback(forcediagram, 0, None)
 
-volmesh_planarise(forcediagram,
-                  kmax=KMAX,
-                  fix_vkeys=FIX_VKEYS,
-                  fix_boundary_normals=False,
-                  tolerance_flat=TOLERANCE_FLAT,
-                  callback=callback,
-                  print_result_info=True)
+volmesh_planarise(forcediagram, kmax=KMAX, fix_vkeys=FIX_VKEYS, fix_boundary_normals=False, tolerance_flat=TOLERANCE_FLAT, callback=callback, print_result_info=True)
 
 # the final state (the algorithm does not call back at the iteration that converges)
 callback(forcediagram, 0, None)

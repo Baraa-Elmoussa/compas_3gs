@@ -1,4 +1,3 @@
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -6,8 +5,7 @@ if TYPE_CHECKING:
     from compas.datastructures import VolMesh
 
 
-__all__ = ['pair_hf_to_uv',
-           'pair_uv_to_hf']
+__all__ = ["pair_hf_to_uv", "pair_uv_to_hf"]
 
 
 def pair_hf_to_uv(volmesh: "VolMesh", network: "Graph") -> dict[int, tuple[int, int]]:
@@ -78,5 +76,5 @@ def pair_uv_to_hf(network: "Graph", volmesh: "VolMesh") -> dict[tuple[int, int],
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

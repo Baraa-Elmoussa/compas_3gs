@@ -20,6 +20,9 @@ Run with the compas-3gs env:  python examples/physical_structures/20_space_truss
 """
 
 import numpy as np
+from compas_viewer import Viewer
+from compas_viewer.scene import Tag
+
 from compas.colors import Color
 from compas.geometry import Frame
 from compas.geometry import Line
@@ -33,9 +36,6 @@ from compas.geometry import length_vector
 from compas.geometry import normalize_vector
 from compas.geometry import scale_vector
 from compas.geometry import subtract_vectors
-from compas_viewer import Viewer
-from compas_viewer.scene import Tag
-
 from compas_3gs.algorithms import cell_from_egi
 from compas_3gs.algorithms import cell_planarise
 from compas_3gs.algorithms import egi_from_vectors
@@ -72,9 +72,9 @@ A = np.zeros((3 * len(free), len(members)))
 for m, (i, j) in enumerate(members):
     u = normalize_vector(subtract_vectors(xyz[j], xyz[i]))  # direction from i to j
     if i in row:
-        A[row[i]:row[i] + 3, m] += u
+        A[row[i] : row[i] + 3, m] += u
     if j in row:
-        A[row[j]:row[j] + 3, m] -= u
+        A[row[j] : row[j] + 3, m] -= u
 b = -np.concatenate([loads[k] for k in free])
 N = np.linalg.solve(A, b)
 print("statically determinate: {} equations, {} members, residual {:.1e}".format(A.shape[0], A.shape[1], np.linalg.norm(A @ N - b)))

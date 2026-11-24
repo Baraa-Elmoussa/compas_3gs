@@ -1,23 +1,14 @@
-
 from collections.abc import Sequence
 
-from compas.geometry import dot_vectors
 from compas.geometry import distance_point_point
-from compas.geometry import midpoint_point_point
+from compas.geometry import dot_vectors
 from compas.geometry import intersection_line_plane
-
+from compas.geometry import midpoint_point_point
 from compas.tolerance import TOL
-
-from compas_3gs.diagrams import Cell
 from compas_3gs.diagrams import EGI
+from compas_3gs.diagrams import Cell
 
-
-__all__ = ['cell_split_indet_face_vertices',
-           'cell_collapse_short_edge',
-
-           'cell_relocate_face',
-           'cell_face_subdivide_barycentric',
-           'cell_merge_coplanar_adjacent_faces']
+__all__ = ["cell_split_indet_face_vertices", "cell_collapse_short_edge", "cell_relocate_face", "cell_face_subdivide_barycentric", "cell_merge_coplanar_adjacent_faces"]
 
 
 # ******************************************************************************
@@ -57,7 +48,6 @@ def cell_split_indet_face_vertices(cell: Cell, fkey: int) -> Cell:
     egi_nbr_vkeys = egi.vertex_neighbors(fkey)
 
     for egi_fkey in f_vkeys:
-
         fkeys = egi.face_vertices(egi_fkey)
         i = fkeys.index(fkey)
         fkeys = fkeys[i:] + fkeys[:i]
@@ -68,7 +58,6 @@ def cell_split_indet_face_vertices(cell: Cell, fkey: int) -> Cell:
         x, y, z = cell.vertex_coordinates(vkey_del)
 
         for vkey in egi_face_vertices:
-
             f, g = egi.split_face(vkey_del, fkey, vkey)
 
             cell.delete_vertex(vkey_del)
@@ -213,7 +202,6 @@ def cell_merge_coplanar_adjacent_faces(cell: Cell, tol: float | None = None) -> 
     current_faces = list(cell.faces())
 
     for fkey in initial_faces:
-
         if fkey in current_faces:
             normal = cell.face_normal(fkey)
 
@@ -270,5 +258,5 @@ def cell_face_subdivide_barycentric(cell: Cell, fkey: int) -> Cell:
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

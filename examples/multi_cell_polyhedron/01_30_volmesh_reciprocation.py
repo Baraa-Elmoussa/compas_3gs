@@ -8,13 +8,13 @@ by moving the form diagram (WEIGHT = 1), the force diagram (WEIGHT = 0), or both
 import json
 import os
 
+from compas_viewer import Viewer
+
 from compas.colors import Color
 from compas.geometry import angle_vectors
 from compas.geometry import bounding_box
 from compas.geometry import centroid_points
 from compas.geometry import distance_point_point
-from compas_viewer import Viewer
-
 from compas_3gs import DATA
 from compas_3gs.algorithms import volmesh_dual_network
 from compas_3gs.algorithms import volmesh_reciprocate
@@ -50,34 +50,27 @@ for node in formdiagram.nodes():
 # ------------------------------------------------------------------------------
 #   3. reciprocate, recording every 2nd iteration
 # ------------------------------------------------------------------------------
-initial_angle = max(angle_vectors(forcediagram.halfface_normal(forcediagram.cell_pair_halffaces(u, v)[0]), formdiagram.edge_direction((u, v)), deg=True)
-                    for u, v in formdiagram.edges())
+initial_angle = max(
+    angle_vectors(forcediagram.halfface_normal(forcediagram.cell_pair_halffaces(u, v)[0]), formdiagram.edge_direction((u, v)), deg=True) for u, v in formdiagram.edges()
+)
 
-frames = [({vkey: forcediagram.vertex_coordinates(vkey) for vkey in forcediagram.vertices()},
-           {node: formdiagram.node_coordinates(node) for node in formdiagram.nodes()})]
+frames = [({vkey: forcediagram.vertex_coordinates(vkey) for vkey in forcediagram.vertices()}, {node: formdiagram.node_coordinates(node) for node in formdiagram.nodes()})]
 
 
 def callback(forcediagram, formdiagram, k, args):
     if k % 2 == 0:
-        frames.append(({vkey: forcediagram.vertex_coordinates(vkey) for vkey in forcediagram.vertices()},
-                       {node: formdiagram.node_coordinates(node) for node in formdiagram.nodes()}))
+        frames.append(
+            ({vkey: forcediagram.vertex_coordinates(vkey) for vkey in forcediagram.vertices()}, {node: formdiagram.node_coordinates(node) for node in formdiagram.nodes()})
+        )
 
 
-volmesh_reciprocate(forcediagram,
-                    formdiagram,
-                    kmax=KMAX,
-                    weight=WEIGHT,
-                    edge_min=EDGE_MIN,
-                    edge_max=EDGE_MAX,
-                    tolerance=TOLERANCE,
-                    callback=callback,
-                    print_result_info=True)
+volmesh_reciprocate(forcediagram, formdiagram, kmax=KMAX, weight=WEIGHT, edge_min=EDGE_MIN, edge_max=EDGE_MAX, tolerance=TOLERANCE, callback=callback, print_result_info=True)
 
-frames.append(({vkey: forcediagram.vertex_coordinates(vkey) for vkey in forcediagram.vertices()},
-               {node: formdiagram.node_coordinates(node) for node in formdiagram.nodes()}))
+frames.append(({vkey: forcediagram.vertex_coordinates(vkey) for vkey in forcediagram.vertices()}, {node: formdiagram.node_coordinates(node) for node in formdiagram.nodes()}))
 
-final_angle = max(angle_vectors(forcediagram.halfface_normal(forcediagram.cell_pair_halffaces(u, v)[0]), formdiagram.edge_direction((u, v)), deg=True)
-                  for u, v in formdiagram.edges())
+final_angle = max(
+    angle_vectors(forcediagram.halfface_normal(forcediagram.cell_pair_halffaces(u, v)[0]), formdiagram.edge_direction((u, v)), deg=True) for u, v in formdiagram.edges()
+)
 
 print("max angle between form edges and face normals:", round(initial_angle, 4), "->", round(final_angle, 4), "degrees")
 

@@ -1,20 +1,16 @@
-
 from collections.abc import Sequence
 from typing import Any
 
 from compas.datastructures import Mesh
-
 from compas.geometry import Vector
-from compas.geometry import subtract_vectors
-from compas.geometry import normalize_vector
-from compas.geometry import normal_polygon
-from compas.geometry import length_vector
 from compas.geometry import cross_vectors
-
+from compas.geometry import length_vector
+from compas.geometry import normal_polygon
+from compas.geometry import normalize_vector
+from compas.geometry import subtract_vectors
 from compas.tolerance import TOL
 
-
-__all__ = ['Mesh3gs']
+__all__ = ["Mesh3gs"]
 
 
 class Mesh3gs(Mesh):
@@ -108,5 +104,5 @@ class Mesh3gs(Mesh):
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

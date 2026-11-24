@@ -10,10 +10,10 @@ start, white is flat.
 import json
 import os
 
-from compas.colors import Color
 from compas_viewer import Viewer
 from compas_viewer.scene import Tag
 
+from compas.colors import Color
 from compas_3gs import DATA
 from compas_3gs.algorithms import cell_planarise
 from compas_3gs.diagrams import Cell
@@ -49,19 +49,12 @@ frames = []
 
 def callback(cell, k, args):
     current_flatness = cell_face_flatness(cell)
-    facecolor = compare_initial_current(current_flatness,
-                                        initial_flatness,
-                                        color_scheme=lambda i: Color(1 - min(1.0, i), 1 - min(1.0, i), 1.0).rgb255)
+    facecolor = compare_initial_current(current_flatness, initial_flatness, color_scheme=lambda i: Color(1 - min(1.0, i), 1 - min(1.0, i), 1.0).rgb255)
     xyz = {vkey: cell.vertex_coordinates(vkey) for vkey in cell.vertices()}
     frames.append((xyz, facecolor))
 
 
-cell_planarise(cell,
-               kmax=KMAX,
-               target_normals=target_normals,
-               target_areas=TARGET_AREAS,
-               callback=callback,
-               print_result_info=True)
+cell_planarise(cell, kmax=KMAX, target_normals=target_normals, target_areas=TARGET_AREAS, callback=callback, print_result_info=True)
 
 for fkey, target in TARGET_AREAS.items():
     print("face", fkey, "area:", round(initial_areas[fkey], 3), "->", round(cell.face_area(fkey), 3), "target:", target)

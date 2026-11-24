@@ -10,13 +10,13 @@ is at the target.
 import json
 import os
 
+from compas_viewer import Viewer
+from compas_viewer.scene import Tag
+
 from compas.colors import Color
 from compas.geometry import bounding_box
 from compas.geometry import centroid_points
 from compas.geometry import distance_point_point
-from compas_viewer import Viewer
-from compas_viewer.scene import Tag
-
 from compas_3gs import DATA
 from compas_3gs.algorithms import volmesh_planarise
 from compas_3gs.diagrams import ForceVolMesh
@@ -52,9 +52,7 @@ frames = []
 def callback(forcediagram, k, args):
     if k % 10 == 0:
         current_areaness = volmesh_face_areaness(forcediagram, target_areas)
-        facecolor = compare_initial_current(current_areaness,
-                                            initial_areaness,
-                                            color_scheme=lambda i: Color(1 - min(1.0, i), 1 - min(1.0, i), 1.0).rgb255)
+        facecolor = compare_initial_current(current_areaness, initial_areaness, color_scheme=lambda i: Color(1 - min(1.0, i), 1 - min(1.0, i), 1.0).rgb255)
         xyz = {vkey: forcediagram.vertex_coordinates(vkey) for vkey in forcediagram.vertices()}
         frames.append((xyz, facecolor))
 
@@ -62,13 +60,7 @@ def callback(forcediagram, k, args):
 # the initial state
 callback(forcediagram, 0, None)
 
-volmesh_planarise(forcediagram,
-                  kmax=KMAX,
-                  target_areas=target_areas,
-                  fix_all_normals=True,
-                  tolerance_area=0.01,
-                  callback=callback,
-                  print_result_info=True)
+volmesh_planarise(forcediagram, kmax=KMAX, target_areas=target_areas, fix_all_normals=True, tolerance_area=0.01, callback=callback, print_result_info=True)
 
 # the final state (the algorithm does not call back at the iteration that converges)
 callback(forcediagram, 0, None)

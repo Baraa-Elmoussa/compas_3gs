@@ -1,13 +1,11 @@
-
 from collections.abc import Sequence
 from typing import Any
 
 from compas.datastructures import VolMesh
-
 from compas.geometry import centroid_points
 from compas.geometry import normalize_vector
 
-__all__ = ['VolMesh3gs']
+__all__ = ["VolMesh3gs"]
 
 
 class VolMesh3gs(VolMesh):
@@ -20,12 +18,16 @@ class VolMesh3gs(VolMesh):
     def __init__(self, *args: Any, name: str = "VolMesh3gs", **kwargs: Any) -> None:
         super().__init__(*args, name=name, **kwargs)
         self.primal = None
-        self.attributes.update({
-            'scale': 1.0,
-        })
-        self.default_face_attributes.update({
-            '_a': 0.0,
-        })
+        self.attributes.update(
+            {
+                "scale": 1.0,
+            }
+        )
+        self.default_face_attributes.update(
+            {
+                "_a": 0.0,
+            }
+        )
 
     # --------------------------------------------------------------------------
     #   vertices
@@ -120,5 +122,5 @@ class VolMesh3gs(VolMesh):
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

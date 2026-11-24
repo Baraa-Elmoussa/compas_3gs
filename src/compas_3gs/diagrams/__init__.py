@@ -48,11 +48,11 @@ Cell Network
 
 """
 
-from .egi import EGI
 from .cell import Cell
-from .polyhedral import FormNetwork
-from .polyhedral import ForceVolMesh
 from .disjointed import CellNetwork
+from .egi import EGI
+from .polyhedral import ForceVolMesh
+from .polyhedral import FormNetwork
 
 __all__ = [
     "EGI",
