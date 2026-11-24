@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added the sample data in `data/` as plain JSON (cells as vertices and faces, volmeshes as vertices and cells), converted from the `.3dm` files by `scripts/convert_3dm.py`.
 * Added examples for compas_viewer: `examples/cell_manipulation/` (5), `examples/multi_cell_polyhedron/` (10) and `examples/physical_structures/` (4).
 * Added type hints and NumPy-style Markdown docstrings to the ported classes and functions.
+* Added `AGENTS.md` and `.agents/`: an entry point for coding agents, with the theory pages, the capabilities, the API by topic, a task-to-example map and the compas 2.15.1 pitfalls.
 * Added `TODO.md` with the open design questions and the known compas 2.15.1 and compas_viewer 2.0.2 issues.
 * Added `pyproject.toml` and `tasks.py` with `compas_invocations2`.
 * Added supports, applied forces and member forces to `compas_3gs.diagrams.FormNetwork`: `node_at`, `set_support`, `add_force`, `supports`, `node_load`, `node_reaction`, `edge_force` and `node_forces`, stored in the attributes `support`, `px`, `py`, `pz`, `_rx`, `_ry`, `_rz` and `_f`.
