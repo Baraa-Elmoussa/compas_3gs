@@ -3,6 +3,7 @@ from math import radians
 from math import sin
 from math import sqrt
 
+import numpy as np
 import pytest
 
 from compas.geometry import add_vectors
@@ -59,10 +60,72 @@ def test_space_truss_on_pinned_slider_and_roller():
     assert TOL.is_allclose(total, [0, 0, 0])
 
 
-def test_indeterminate_raises():
-    corners = [[1.0, 1.0, 0.0], [-1.0, 1.0, 0.0], [-1.0, -1.0, 0.0], [1.0, -1.0, 0.0]]
-    with pytest.raises(ValueError, match="indeterminate"):
-        truss_equilibrium([[0.0, 0.0, 2.0]] + corners, [(0, 1), (0, 2), (0, 3), (0, 4)], {0: [0, 0, -10]}, {i: "xyz" for i in range(1, 5)})
+PYRAMID = [[0.2, -0.1, 2.0], [1.0, 1.0, 0.0], [-1.0, 1.5, 0.0], [-1.0, -1.0, 0.0], [1.2, -1.0, 0.0]]
+LEGS = [(0, 1), (0, 2), (0, 3), (0, 4)]
+PINNED = {i: "xyz" for i in range(1, 5)}
+APEX_LOAD = {0: [1.0, 0.5, -10.0]}
+
+
+def test_indeterminate_truss_has_one_self_stress_state():
+    result = truss_equilibrium(PYRAMID, LEGS, APEX_LOAD, PINNED)
+
+    assert not result.determinate
+    assert len(result.self_stresses) == 1
+    member_forces, reactions = result.self_stresses[0]
+    assert max(abs(force) for force in member_forces) == pytest.approx(1.0)
+    # a self-stress state is in equilibrium without any load
+    total = [0.0, 0.0, 0.0]
+    for (i, j), force in zip(LEGS, member_forces):
+        total = add_vectors(total, scale_vector(normalize_vector(subtract_vectors(PYRAMID[j], PYRAMID[i])), force))
+    assert TOL.is_allclose(total, [0, 0, 0])
+    for (i, j), force in zip(LEGS, member_forces):
+        foot = add_vectors(reactions[j], scale_vector(normalize_vector(subtract_vectors(PYRAMID[i], PYRAMID[j])), force))
+        assert TOL.is_allclose(foot, [0, 0, 0])
+
+
+def test_indeterminate_elastic_state_is_the_finite_element_state():
+    ea = [1.0, 2.0, 3.0, 4.0]
+    result = truss_equilibrium(PYRAMID, LEGS, APEX_LOAD, PINNED, stiffness=ea)
+
+    # the apex is the only free node: its stiffness matrix is the sum of EA / L * d d^T over the legs
+    K = np.zeros((3, 3))
+    for (i, j), stiffness in zip(LEGS, ea):
+        d = np.subtract(PYRAMID[j], PYRAMID[i])
+        K += stiffness / np.linalg.norm(d) ** 3 * np.outer(d, d)
+    u = np.linalg.solve(K, APEX_LOAD[0])
+    fem = []
+    for (i, j), stiffness in zip(LEGS, ea):
+        d = np.subtract(PYRAMID[j], PYRAMID[i])
+        length = np.linalg.norm(d)
+        fem.append(stiffness / length * np.dot(-d / length, u))  # the foot j does not move, the apex i moves by u
+
+    assert TOL.is_allclose(result.forces, fem)
+    assert not TOL.is_allclose(result.forces, truss_equilibrium(PYRAMID, LEGS, APEX_LOAD, PINNED).forces)
+
+
+def test_indeterminate_state_from_a_prescribed_force_or_reaction():
+    by_force = truss_equilibrium(PYRAMID, LEGS, APEX_LOAD, PINNED, forces={2: -1.5})
+    assert TOL.is_close(by_force.forces[2], -1.5)
+    assert TOL.is_zero(by_force.residual)
+
+    by_reaction = truss_equilibrium(PYRAMID, LEGS, APEX_LOAD, PINNED, reactions={(1, "z"): 3.0})
+    assert TOL.is_close(by_reaction.reactions[1][2], 3.0)
+    assert TOL.is_zero(by_reaction.residual)
+
+    # one prescribed value fixes the one free parameter, whatever the stiffness
+    stiff = truss_equilibrium(PYRAMID, LEGS, APEX_LOAD, PINNED, forces={2: -1.5}, stiffness=[1.0, 10.0, 0.1, 5.0])
+    assert TOL.is_allclose(stiff.forces, by_force.forces)
+
+
+def test_prescribed_values_that_cannot_hold_raise():
+    with pytest.raises(ValueError, match="cannot all hold"):
+        truss_equilibrium([APEX] + FEET, [(0, 1), (0, 2), (0, 3)], {0: [0, 0, -10]}, {1: "xyz", 2: "xyz", 3: "xyz"}, forces={0: 5.0})
+    with pytest.raises(ValueError, match="cannot all hold"):
+        truss_equilibrium(PYRAMID, LEGS, APEX_LOAD, PINNED, forces={0: 0.0, 1: 0.0})
+    with pytest.raises(ValueError, match="no reaction"):
+        truss_equilibrium(PYRAMID, LEGS, APEX_LOAD, PINNED, reactions={(0, "z"): 1.0})
+    with pytest.raises(ValueError, match="positive"):
+        truss_equilibrium(PYRAMID, LEGS, APEX_LOAD, PINNED, stiffness=[1.0, 0.0, 1.0, 1.0])
 
 
 def test_mechanism_raises_for_a_load_it_cannot_carry():

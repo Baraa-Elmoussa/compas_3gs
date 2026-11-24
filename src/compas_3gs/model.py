@@ -46,6 +46,9 @@ class GSModel(Data):
         The polyhedral force diagram.
     result : EquilibriumResult | None
         The result of the last `solve`.
+    self_stresses : list[tuple[dict[tuple[int, int], float], dict[int, Vector]]]
+        The self-stress states found by the last `solve`, each as member forces by edge and reactions by support node.
+        Adding any multiple of one to the forces in the form diagram gives another state in equilibrium with the same loads.
     cells : dict[int, Cell]
         The force polyhedron of each node, after `derive_force_diagram`.
     cell_faces : dict[int, dict[int, tuple[int, int] | str]]
@@ -78,6 +81,7 @@ class GSModel(Data):
             self.form.dual = force
             force.primal = self.form
         self.result = None
+        self.self_stresses = []
         self.cells = {}
         self.cell_faces = {}
         self.skipped = {}
@@ -194,14 +198,33 @@ class GSModel(Data):
     # analysis
     # --------------------------------------------------------------------------
 
-    def solve(self, tol: float | None = None) -> EquilibriumResult:
-        """Compute the member forces and support reactions from equilibrium, and store them in the form diagram.
+    def solve(
+        self,
+        stiffness: float | dict[tuple[int, int], float] | None = None,
+        forces: dict[tuple[int, int], float] | None = None,
+        reactions: dict[tuple[int, str], float] | None = None,
+        tol: float | None = None,
+    ) -> EquilibriumResult:
+        """Compute member forces and support reactions in equilibrium, and store them in the form diagram.
+
+        A statically determinate truss has one state in equilibrium with its loads. A statically indeterminate truss has
+        a family of them, with one free parameter per self-stress state (`EquilibriumResult.self_stresses`). Of those,
+        `solve` takes the state with the least complementary energy among the states that have the prescribed `forces`
+        and `reactions` (see `truss_equilibrium`): with nothing prescribed, the linear elastic state of the truss with
+        the given `stiffness`; with as many prescribed forces or reactions as there are self-stress states, the state
+        they fix.
 
         The member forces go into the edge attribute `_f`, the reactions into the node attributes `_rx`, `_ry` and `_rz`.
         The cells of an earlier `derive_force_diagram` are removed.
 
         Parameters
         ----------
+        stiffness
+            The axial stiffness `EA` of the members: one value for all, or one per edge. Default is the same for all.
+        forces
+            Prescribed axial forces, by edge.
+        reactions
+            Prescribed reaction components, by support node and axis, for example `{(node, "z"): 10.0}`.
         tol
             The largest out-of-balance force, relative to the largest load; see `truss_equilibrium`.
 
@@ -212,17 +235,28 @@ class GSModel(Data):
         Raises
         ------
         ValueError
-            If the truss is statically indeterminate, or a mechanism that cannot carry the load.
+            If the truss is a mechanism that cannot carry the load, or if the prescribed forces and reactions cannot all hold.
+        KeyError
+            If `stiffness` is a dict without a value for every edge.
 
         """
         nodes = list(self.form.nodes())
         index = {node: i for i, node in enumerate(nodes)}
         edges = list(self.form.edges())
+        position = {edge: i for i, edge in enumerate(edges)}
+        position.update({(v, u): i for i, (u, v) in enumerate(edges)})
+        if isinstance(stiffness, dict):
+            ea = [stiffness[edge] if edge in stiffness else stiffness[edge[::-1]] for edge in edges]
+        else:
+            ea = None if stiffness is None else [float(stiffness)] * len(edges)
         result = truss_equilibrium(
             [self.form.node_coordinates(node) for node in nodes],
             [(index[u], index[v]) for u, v in edges],
             {index[node]: list(self.form.node_load(node)) for node in nodes},
             {index[node]: self.form.node_attribute(node, "support") for node in self.form.supports()},
+            stiffness=ea,
+            forces={position[edge]: value for edge, value in (forces or {}).items()},
+            reactions={(index[node], axis): value for (node, axis), value in (reactions or {}).items()},
             tol=tol,
         )
         for edge, value in zip(edges, result.forces):
@@ -230,6 +264,10 @@ class GSModel(Data):
         for node in nodes:
             self.form.node_attributes(node, ["_rx", "_ry", "_rz"], result.reactions.get(index[node], [0.0, 0.0, 0.0]))
         self.result = result
+        self.self_stresses = [
+            ({edge: force for edge, force in zip(edges, state_forces)}, {nodes[i]: Vector(*reaction) for i, reaction in state_reactions.items()})
+            for state_forces, state_reactions in result.self_stresses
+        ]
         self.cells, self.cell_faces, self.skipped = {}, {}, {}
         return result
 

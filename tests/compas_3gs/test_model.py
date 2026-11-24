@@ -114,14 +114,51 @@ def test_supports_of_every_type():
     assert TOL.is_allclose(total, [-0.3, -0.2, 1.0])
 
 
-def test_solve_raises_for_an_indeterminate_truss():
+@pytest.fixture
+def four_legs():
     corners = [[1.0, 1.0, 0.0], [-1.0, 1.0, 0.0], [-1.0, -1.0, 0.0], [1.0, -1.0, 0.0]]
     model = GSModel.from_lines([([0.0, 0.0, 2.0], corner) for corner in corners])
     for corner in corners:
         model.set_support(model.node_at(corner), "pinned")
-    model.add_force(model.node_at([0.0, 0.0, 2.0]), [0.0, 0.0, -10.0])
-    with pytest.raises(ValueError, match="indeterminate"):
-        model.solve()
+    model.add_force(model.node_at([0.0, 0.0, 2.0]), [0.0, 0.0, -12.0])
+    return model
+
+
+def test_solve_an_indeterminate_truss(four_legs):
+    result = four_legs.solve()
+
+    assert not result.determinate
+    assert len(result.self_stresses) == 1
+    assert len(four_legs.self_stresses) == 1
+    state_forces, state_reactions = four_legs.self_stresses[0]
+    assert set(state_forces) == set(four_legs.form.edges())
+    assert set(state_reactions) == set(four_legs.form.supports())
+    assert TOL.is_allclose([abs(force) for force in state_forces.values()], [1.0] * 4)
+    forces = list(four_legs.forces().values())
+    assert TOL.is_allclose(forces, [forces[0]] * 4)  # equal stiffness, symmetric legs: equal forces
+    for node in four_legs.form.nodes():
+        total = [sum(force[k] for force in four_legs.form.node_forces(node).values()) for k in range(3)]
+        assert TOL.is_allclose(total, [0, 0, 0])
+
+
+def test_solve_an_indeterminate_truss_with_stiffness_or_prescribed_values(four_legs):
+    edges = list(four_legs.form.edges())
+
+    stiff = four_legs.solve(stiffness={edge: 10.0 if i == 0 else 1.0 for i, edge in enumerate(edges)})
+    assert abs(stiff.forces[0]) > abs(stiff.forces[1])  # the stiff leg attracts force
+
+    four_legs.solve(forces={edges[0]: 0.0})
+    assert TOL.is_zero(four_legs.form.edge_force(edges[0]))
+
+    support = next(iter(four_legs.form.supports()))
+    four_legs.solve(reactions={(support, "z"): 1.0})
+    assert TOL.is_close(four_legs.form.node_reaction(support)[2], 1.0)
+    for node in four_legs.form.nodes():
+        total = [sum(force[k] for force in four_legs.form.node_forces(node).values()) for k in range(3)]
+        assert TOL.is_allclose(total, [0, 0, 0])
+
+    with pytest.raises(ValueError, match="cannot all hold"):
+        four_legs.solve(forces={edges[0]: 0.0, edges[1]: 0.0})
 
 
 def test_solve_raises_for_a_mechanism():
