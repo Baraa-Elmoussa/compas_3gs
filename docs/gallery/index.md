@@ -37,6 +37,7 @@ A form diagram from lines, supports and forces, solved with `GSModel` and drawn 
 - [A tetrahelix tower on a pinned, a slider and a roller support, with `GSModel`](model_02_space_truss.md)
 - [Force first with `GSModel`: a polyhedral force diagram gives the frame and its forces](model_03_force_first.md)
 - [What `GSModel.solve` says when statics alone cannot give the forces](model_04_determinacy.md)
+- [A 3D Warren truss solved twice: with 3GS (`GSModel`, statics) and with a linear finite element model](model_05_warren_truss_fem.md)
 
 ## Physical structures
 
