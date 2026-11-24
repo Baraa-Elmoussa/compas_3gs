@@ -1,4 +1,7 @@
 
+from compas.datastructures import Graph
+from compas.datastructures import VolMesh
+
 from compas.geometry import convex_hull
 from compas.geometry import add_vectors
 from compas.geometry import centroid_points
@@ -12,33 +15,36 @@ __all__ = ['volmesh_ud',
            'cellnetwork_ud']
 
 
-def volmesh_ud(volmesh,
-               network,
-               scale=0.5):
+def volmesh_ud(volmesh: VolMesh,
+               network: Graph,
+               scale: float = 0.5) -> tuple[dict[int, dict], dict[tuple[int, int], dict]]:
     """Computes temporary vertex coordinates for every halfface of a volmesh, for the visualisation of the unified diagram.
 
     Parameters
     ----------
-    volmesh : VolMesh
+    volmesh
         A volmesh object representing a polyhedral force diagram.
-    network : Network
+    network
         A network object representing a polyhedral form diagram.
-    scale : float
-        Unified diagram scale factor,
+    scale
+        Unified diagram scale factor, between 0 and 1.
 
     Returns
     -------
-    halffaces : dictionary
-        A dictionary of dictionaries: hfkey-{vkey: (x, y, z)}.
-    prisms : dictionary
-        A dictinoary of dictinoaries: uv - [face coordinates]
+    tuple[dict[int, dict], dict[tuple[int, int], dict]]
+        The scaled cells, `{ckey: {"vertices": [[x, y, z], ...], "faces": [[i, j, k, ...], ...]}}`,
+        each cell scaled by `scale` towards the corresponding node of the form diagram (moved onto
+        the force diagram), and the prisms between them, `{(u, v): {"vertices": ..., "faces": ...}}`,
+        one per edge of the form diagram.
 
     Raises
     ------
     Exception
         If scale is 0, which means the unified diagram is equivalent to the polyhedral force diagram.
     Exception
-        If scale is 0, which means the unified diagram is equivalent to the polyhedral form diagram.
+        If scale is 1, which means the unified diagram is equivalent to the polyhedral form diagram.
+    AssertionError
+        If scale is not between 0 and 1.
 
     Notes
     -----

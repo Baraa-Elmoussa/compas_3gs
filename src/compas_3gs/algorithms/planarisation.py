@@ -14,6 +14,8 @@ from compas_3gs.operations import cell_collapse_short_edge
 
 from compas_3gs.utilities import print_result
 
+from compas.datastructures import VolMesh
+
 from compas_3gs.datastructures import Mesh3gs
 from compas_3gs.diagrams import Cell
 
@@ -242,67 +244,72 @@ def cell_planarise(cell: Cell,
 # ******************************************************************************
 
 
-def volmesh_planarise(volmesh,
-                      kmax=100,
+def volmesh_planarise(volmesh: VolMesh,
+                      kmax: int = 100,
 
-                      target_centers={},
-                      target_normals={},
-                      target_areas={},
+                      target_centers: dict[int, Sequence[float]] | None = None,
+                      target_normals: dict[int, Sequence[float]] | None = None,
+                      target_areas: dict[int, float] | None = None,
 
-                      fix_vkeys=[],
+                      fix_vkeys: list[int] | None = None,
 
-                      fix_boundary_normals=False,
-                      fix_all_normals=False,
+                      fix_boundary_normals: bool = False,
+                      fix_all_normals: bool = False,
 
-                      min_area=None,
-                      max_area=None,
+                      min_area: float | None = None,
+                      max_area: float | None = None,
 
-                      tolerance_flat=0.001,
-                      tolerance_area=0.001,
-                      tolerance_perp=0.001,
+                      tolerance_flat: float = 0.001,
+                      tolerance_area: float = 0.001,
+                      tolerance_perp: float = 0.001,
 
-                      callback=None,
-                      callback_args=None,
+                      callback: Callable | None = None,
+                      callback_args: Any = None,
 
-                      print_result_info=False):
+                      print_result_info: bool = False) -> None:
     """Planarises the halffaces of a volmesh.
 
     Planarisation of a volmesh is implemented as a three-step iterative procedure.
-    At every iteration, each halfface is first individually projected to its best-fit plane (unless a target normal is given).
-    Then, each halfface is re-sized to its target area (if given).
-    Finally, the new vertex coordinates are computed by taking the centroid of the disconnected corners of the halffaces.
+    At every iteration, each face is first individually projected to its best-fit plane (unless a target normal is given).
+    Then, each face is re-sized to its target area (if given).
+    Finally, the new vertex coordinates are computed by taking the centroid of the disconnected corners of the faces.
+    Each face is handled once, for both of its halffaces; a target can be keyed by either halfface.
 
     Parameters
     ----------
-    volmesh : VolMesh
+    volmesh
         A volmesh object.
-    kmax : int, optional [100]
+    kmax
         Number of iterations.
-    target_face_areas : dictionary, optional [{}]
-        A dictionary of fkeys and target areas.
-    target_face_normals : dictionary, optional [{}]
-        A dictionary of fkeys and target face normals.
-    target_face_centers : dictionary, optional [{}]
-        A dictionary of fkeys and target face centers.
-    omit_vkeys : list, optional [[]]
-        List of vkeys to omit from arearisation.
-    fix_boundary_face_normals : boolean, optional [False]
-        Whether to keep the initial normals of the bondary faces.
-    fix_all_face_normals : boolean, optional [False]
+    target_centers
+        A dictionary of halfface keys and target face centers.
+    target_normals
+        A dictionary of halfface keys and target face normals.
+    target_areas
+        A dictionary of halfface keys and target areas.
+    fix_vkeys
+        List of vertices that do not move.
+    fix_boundary_normals
+        Whether to keep the initial normals of the boundary faces.
+    fix_all_normals
         Whether to keep the initial normals of all faces.
-    tolerance_flat: float, optional
-        Convergence tolerance for face flatness.
-    tolerance_area: float, optional
-        Convergence tolerance for face areas against target areas.
-    tolerance_perp: float, optional
-        Convergence tolerance for face perpendicularity against target normals.
-    callback : callable, optional
-        A user-defined callback function to be executed after every iteration.
-        Default is ``None``.
-    callback_args : tuple, optional
+    min_area
+        Not used.
+    max_area
+        Not used.
+    tolerance_flat
+        Convergence tolerance for face flatness, a length: the largest distance of a vertex to its projection plane.
+    tolerance_area
+        Convergence tolerance for face areas, an area: the largest difference between a face area and its target.
+    tolerance_perp
+        Convergence tolerance for the face normals: the largest `1 - abs(dot(n, t))` of a unit normal `n`
+        and its unit target `t`.
+    callback
+        A user-defined callback function to be executed after every iteration,
+        called as `callback(volmesh, k, callback_args)`.
+    callback_args
         Additional parameters to be passed to the callback.
-        Default is ``None``.
-    print_result_info : bool, optional
+    print_result_info
         If True, print the result of the algorithm.
 
     Raises
@@ -310,13 +317,15 @@ def volmesh_planarise(volmesh,
     Exception
         If a callback is provided, but it is not callable.
 
-    .. seealso ::
-        `compas.geometry.mesh_planarize_faces`
-
     """
     if callback:
         if not callable(callback):
             raise Exception('Callback is not callable.')
+
+    target_centers = target_centers or {}
+    target_normals = target_normals or {}
+    target_areas = target_areas or {}
+    fix_vkeys = fix_vkeys or []
 
     # --------------------------------------------------------------------------
     #   1. initialise
@@ -348,11 +357,14 @@ def volmesh_planarise(volmesh,
             f_area = volmesh.halfface_area(fkey)
 
             # override with manual target values -------------------------------
-            if _pair_membership(fkey, fkey_pair, target_centers):
-                f_center = target_centers[fkey]
+            # (keyed by this halfface or by its opposite; both define the same plane)
+            target_key = fkey if fkey in target_centers else fkey_pair
+            if target_key in target_centers:
+                f_center = target_centers[target_key]
 
-            if _pair_membership(fkey, fkey_pair, target_normals):
-                target_normal = target_normals[fkey]
+            target_key = fkey if fkey in target_normals else fkey_pair
+            if target_key in target_normals:
+                target_normal = target_normals[target_key]
 
                 # perpness deviation
                 perpness = 1 - abs(dot_vectors(f_normal, target_normal))
@@ -387,8 +399,9 @@ def volmesh_planarise(volmesh,
             #   4. arearise
             # ------------------------------------------------------------------
             if target_areas:
-                if fkey in target_areas:
-                    target_area = target_areas[fkey]
+                target_key = fkey if fkey in target_areas else fkey_pair
+                if target_key in target_areas:
+                    target_area = target_areas[target_key]
                     scale = (target_area / f_area) ** 0.5
 
                     # scale
@@ -444,23 +457,7 @@ def volmesh_planarise(volmesh,
 # ******************************************************************************
 
 
-def _pair_membership(item1, item2, container):
-    if item1 in container or item2 in container:
-        return True
-    else:
-        return False
-
-
-def _get_current_mesh_normals(mesh):
-    normal_dict = {}
-    for fkey in mesh.face():
-        center = mesh.face_center(fkey)
-        normal = mesh.face_normal(fkey)
-        normal_dict[fkey] = {'normal': normal, 'center': center}
-    return normal_dict
-
-
-def _get_current_volmesh_normals(volmesh):
+def _get_current_volmesh_normals(volmesh: VolMesh) -> dict[int, dict]:
     normal_dict = {}
     for hfkey in volmesh.halffaces():
         center = volmesh.halfface_center(hfkey)

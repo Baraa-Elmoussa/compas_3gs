@@ -18,6 +18,8 @@ from compas.geometry import is_point_on_segment
 from compas.geometry import project_point_plane
 
 if TYPE_CHECKING:
+    from compas.datastructures import VolMesh
+
     from compas_3gs.diagrams import Cell
 
 
@@ -417,17 +419,19 @@ def cell_face_areaness(cell: "Cell", target_areas: dict[int, float]) -> dict[int
 # ******************************************************************************
 
 
-def volmesh_face_flatness(volmesh):
+def volmesh_face_flatness(volmesh: "VolMesh") -> dict[int, float]:
     """Compute the flatness of every face of a volmesh.
 
     Parameters
     ----------
-    volmesh : volmesh object
+    volmesh
+        A volmesh.
 
     Returns
     -------
-    dict
-        A dictionary of flatness deviation for every face of the volmesh.
+    dict[int, float]
+        A dictionary of flatness deviation for every face of the volmesh (one halfface per face):
+        the largest distance of a face vertex to the best-fit plane of the face.
 
     """
     flatness_dict = {fkey: 0 for fkey in volmesh.faces()}
@@ -442,17 +446,20 @@ def volmesh_face_flatness(volmesh):
     return flatness_dict
 
 
-def volmesh_face_areaness(volmesh, target_areas):
-    """Compute the areaness of every face of a volmesh.
+def volmesh_face_areaness(volmesh: "VolMesh", target_areas: dict[int, float]) -> dict[int, float]:
+    """Compute the areaness of the halffaces of a volmesh that have a target area.
 
     Parameters
     ----------
-    volmesh : volmesh object
+    volmesh
+        A volmesh.
+    target_areas
+        Dictionary of halfface keys and target areas.
 
     Returns
     -------
-    dict
-        A dictionary of area deviation for each face of the volmesh.
+    dict[int, float]
+        A dictionary of area deviation for each halfface in `target_areas`.
 
     """
     areaness_dict = {}
@@ -462,15 +469,6 @@ def volmesh_face_areaness(volmesh, target_areas):
         areaness_dict[hfkey] = abs(target_areas[hfkey] - area)
 
     return areaness_dict
-
-
-def _get_current_volmesh_normals(volmesh):
-    normal_dict = {}
-    for hfkey in volmesh.halfface:
-        center = volmesh.halfface_center(hfkey)
-        normal = volmesh.halfface_normal(hfkey)
-        normal_dict[hfkey] = {'normal': normal, 'center': center}
-    return normal_dict
 
 
 # ******************************************************************************

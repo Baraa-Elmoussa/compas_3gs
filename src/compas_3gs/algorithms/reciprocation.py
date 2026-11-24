@@ -1,4 +1,10 @@
 
+from collections.abc import Callable
+from typing import Any
+
+from compas.datastructures import Graph
+from compas.datastructures import VolMesh
+
 from compas.geometry import normalize_vector
 from compas.geometry import scale_vector
 from compas.geometry import add_vectors
@@ -15,49 +21,55 @@ from compas_3gs.utilities import print_result
 __all__ = ['volmesh_reciprocate']
 
 
-def volmesh_reciprocate(volmesh,
-                        formdiagram,
+def volmesh_reciprocate(volmesh: VolMesh,
+                        formdiagram: Graph,
 
-                        kmax=100,
-                        weight=1.0,
+                        kmax: int = 100,
+                        weight: float = 1.0,
 
-                        fix_vkeys=[],
+                        fix_vkeys: list[int] | None = None,
 
-                        edge_min=0.1,
-                        edge_max=10000,
+                        edge_min: float = 0.1,
+                        edge_max: float = 10000,
 
-                        tolerance=1.0,
-                        tolerance_boundary=1.0,
+                        tolerance: float = 1.0,
+                        tolerance_boundary: float = 1.0,
 
-                        callback=None,
-                        callback_args=None,
+                        callback: Callable | None = None,
+                        callback_args: Any = None,
 
-                        print_result_info=False):
+                        print_result_info: bool = False) -> None:
     """Perpendicularizes the faces of the polyhedral force diagram to the corresponding dual edges in the polyhedral form diagram.
 
     Parameters
     ----------
-    volmesh : VolMesh
+    volmesh
         A volmesh object representing a polyhedral force diagram.
-    formdiagram : VolMesh or Network
+    formdiagram
         A network object representing a polyhedral form diagram.
-    kmax : int, optional [100]
+    kmax
         Maximum number of iterations.
-    weight : float, optional [1.0]
-        A float, between 0 and 1, which determines how much each diagram changes. 1 changes the form diagram only, while 0 changes the force diagram only. Default is ``1.0``.
-    fix_vkeys : list, optional []
-        List of vkeys to fix.
-    edge_min : float, optional [None]
+    weight
+        A float, between 0 and 1, which determines how much each diagram changes.
+        1 changes the form diagram only, while 0 changes the force diagram only.
+    fix_vkeys
+        List of form diagram nodes to fix.
+    edge_min
         Value for minimum edge length to be imposed.
-    edge_max : float, optional [None]
+    edge_max
         Value for maximum edge length allowed.
-    tolerance: float, optional [0.001]
-        Value for convergence tolerance. Deviation is measured by the the dot product of the input and target vectors.
-    callback : callable, optional [None]
-        A user-defined callback function to be executed after every iteration.
-    callback_args : tuple, optional [None]
+    tolerance
+        Convergence tolerance, an angle in degrees: the largest angle between a form edge and
+        the normal of its halfface in the force diagram.
+    tolerance_boundary
+        Convergence tolerance, an angle in degrees: the largest angle between a boundary halfface
+        normal and its initial normal.
+    callback
+        A user-defined callback function to be executed after every iteration,
+        called as `callback(volmesh, formdiagram, k, callback_args)`.
+    callback_args
         Additional parameters to be passed to the callback.
-    print_result_info : bool, optional
+    print_result_info
         If True, print the result of the algorithm.
 
     Raises
@@ -69,14 +81,13 @@ def volmesh_reciprocate(volmesh,
     -----
     The orientations of the boundary faces of the polyhedral force diagram are always fixed by default.
 
-    .. seealso ::
-        compas.geometry.network_parallelise_edges
-
     """
 
     if callback:
         if not callable(callback):
             raise Exception('Callback is not callable.')
+
+    fix_vkeys = fix_vkeys or []
 
     free_vkeys = list(set(formdiagram.nodes()) - set(fix_vkeys))
 
@@ -121,7 +132,7 @@ def volmesh_reciprocate(volmesh,
                 edge_v = formdiagram.edge_vector((u, v))
 
                 # target edge length -------------------------------------------
-                l = length_vector(edge_v)
+                length = length_vector(edge_v)
 
                 l_min = formdiagram.edge_attribute((u, v), 'l_min')
                 l_max = formdiagram.edge_attribute((u, v), 'l_max')
@@ -129,26 +140,26 @@ def volmesh_reciprocate(volmesh,
                 # min edge
                 if edge_min:
                     l_min = edge_min
-                if l < l_min:
-                    l = l_min
+                if length < l_min:
+                    length = l_min
 
                 # max edge
                 if edge_max:
                     l_max = edge_max
-                if l > l_max:
-                    l = l_max
+                if length > l_max:
+                    length = l_max
 
                 # check edge orientation ---------------------------------------
                 direction = _get_lambda(edge_v, target_v)
-                l *= direction
+                length *= direction
 
                 # collect new coordinates --------------------------------------
                 if u in free_vkeys:
-                    new_u_xyz = add_vectors(formdiagram.node_coordinates(v), scale_vector(target_v, -1 * l))
+                    new_u_xyz = add_vectors(formdiagram.node_coordinates(v), scale_vector(target_v, -1 * length))
                     new_form_xyz[u].append(new_u_xyz)
 
                 if v in free_vkeys:
-                    new_v_xyz = add_vectors(formdiagram.node_coordinates(u), scale_vector(target_v, l))
+                    new_v_xyz = add_vectors(formdiagram.node_coordinates(u), scale_vector(target_v, length))
                     new_form_xyz[v].append(new_v_xyz)
 
             # compute new vertex coordinates -----------------------------------
@@ -207,7 +218,7 @@ def cellnetwork_reciprocate(cellnetwork):
 # ******************************************************************************
 
 
-def _get_lambda(vector_1, vector_2):
+def _get_lambda(vector_1: list[float], vector_2: list[float]) -> int:
     dot = dot_vectors(vector_1, vector_2)
     if dot < 0:
         return -1
@@ -215,7 +226,7 @@ def _get_lambda(vector_1, vector_2):
         return 1
 
 
-def _check_deviation(volmesh, network):
+def _check_deviation(volmesh: VolMesh, network: Graph) -> float:
     deviation = 0
     for u, v in network.edges():
         u_hf, v_hf = volmesh.cell_pair_halffaces(u, v)
