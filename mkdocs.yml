@@ -167,6 +167,35 @@ nav:
           - user_manual/03_materialisation.md
           - Background: user_manual/03_materialisation/03_00_background.md
           - MycoTree node: user_manual/03_materialisation/03_10_mycotree_node.md
+  - Examples:
+      - gallery/index.md
+      - Models:
+          - Tripod: gallery/model_01_tripod.md
+          - Space truss: gallery/model_02_space_truss.md
+          - Force first: gallery/model_03_force_first.md
+          - Determinacy: gallery/model_04_determinacy.md
+      - Physical structures:
+          - Tripod: gallery/physical_structures_10_tripod.md
+          - Space truss: gallery/physical_structures_20_space_truss.md
+          - Force first frames: gallery/physical_structures_30_force_first_frames.md
+          - Arch thrust line: gallery/physical_structures_40_arch_thrust_line.md
+      - Polyhedral cell:
+          - Cell pull face: gallery/cell_manipulation_00_10_cell_pull_face.md
+          - Cell arearise face: gallery/cell_manipulation_00_20_cell_arearise_face.md
+          - Cell constructor: gallery/cell_manipulation_00_30_cell_constructor.md
+          - Cell planarisation: gallery/cell_manipulation_00_40_cell_planarisation.md
+          - Cell arearisation: gallery/cell_manipulation_00_41_cell_arearisation.md
+      - Multi-cell polyhedron:
+          - Volmesh constructor: gallery/multi_cell_polyhedron_01_10_volmesh_constructor.md
+          - Volmesh duality volmesh: gallery/multi_cell_polyhedron_01_20_volmesh_duality_volmesh.md
+          - Volmesh duality network: gallery/multi_cell_polyhedron_01_21_volmesh_duality_network.md
+          - Volmesh reciprocation: gallery/multi_cell_polyhedron_01_30_volmesh_reciprocation.md
+          - Volmesh planarisation: gallery/multi_cell_polyhedron_01_40_volmesh_planarisation.md
+          - Volmesh arearisation: gallery/multi_cell_polyhedron_01_50_volmesh_arearisation.md
+          - Volmesh modification: gallery/multi_cell_polyhedron_01_60_volmesh_modification.md
+          - Volmesh color id: gallery/multi_cell_polyhedron_01_70_volmesh_color_id.md
+          - Volmesh visualisation: gallery/multi_cell_polyhedron_01_71_volmesh_visualisation.md
+          - Volmesh unified diagram: gallery/multi_cell_polyhedron_01_80_volmesh_unified_diagram.md
   - API Reference:
       - 05_api_reference.md
       - compas_3gs.algorithms: api/compas_3gs.algorithms.md
