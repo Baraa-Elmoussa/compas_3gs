@@ -15,33 +15,37 @@ class Cell(Mesh3gs):
 
     """
 
-    def __init__(self):
-        super(Cell, self).__init__()
+    def __init__(self, *args, name="Cell", **kwargs):
+        super().__init__(*args, name=name, **kwargs)
 
-        self.cell = Mesh3gs()
-        self.egi = Mesh3gs()
-
-        a = {}
-        va = {'x_fix': False,
-              'y_fix': False,
-              'z_fix': False}
-        ea = {'target_vector': None,
-              'target_length': None}
-        fa = {'target_area': None,
-              'target_normal': None}
-
-        self.attributes.update(a)
-        self.default_vertex_attributes.update(va)
-        self.default_edge_attributes.update(ea)
-        self.default_face_attributes.update(fa)
+        self.default_vertex_attributes.update({
+            'x_fix': False,
+            'y_fix': False,
+            'z_fix': False,
+        })
+        self.default_edge_attributes.update({
+            'target_vector': None,
+            'target_length': None,
+        })
+        self.default_face_attributes.update({
+            'target_area': None,
+            'target_normal': None,
+        })
 
     # --------------------------------------------------------------------------
     # misc
     # --------------------------------------------------------------------------
 
     def cell_center(self):
-        vertices = [self.vertex_coordinates(vkey) for vkey in self.vertex]
-        return centroid_polyhedron(vertices, self.face)
+        """Compute the volume centroid of the cell.
+
+        Returns
+        -------
+        list of float
+            The XYZ coordinates of the centroid of the polyhedron.
+
+        """
+        return centroid_polyhedron(self.to_vertices_and_faces())
 
 
 # ******************************************************************************
