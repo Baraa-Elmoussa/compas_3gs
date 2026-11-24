@@ -4,10 +4,7 @@ from __future__ import division
 
 from compas.geometry import dot_vectors
 
-from compas.utilities import i_to_rgb
-from compas.utilities import i_to_blue
-from compas.utilities import i_to_green
-from compas.utilities import i_to_red
+from compas.colors import Color
 
 from compas_3gs.utilities.topology import pair_uv_to_hf
 
@@ -34,15 +31,16 @@ __all__ = ['get_index_colordict',
 # ******************************************************************************
 
 
-def get_index_colordict(key_list, color_scheme=i_to_rgb):
+def get_index_colordict(key_list, color_scheme=None):
     """Convert a list of keys to a dictionary of key-color pairs based on a color gradient scheme.
 
     Parameters
     ----------
     key_list : list
         List of keys.
-    color_scheme
-        Desired color gradient scheme (i.e. i_to_rgb, i_to_red, i_to_blue, etc.)
+    color_scheme : callable, optional
+        A function that maps a float between 0 and 1 to an RGB tuple (0-255).
+        Default is ``Color.from_i(value).rgb255`` (blue to red).
 
     Returns
     -------
@@ -61,21 +59,22 @@ def get_index_colordict(key_list, color_scheme=i_to_rgb):
             else:
                 value = float(index) / (len(key_list) - 1)
 
-            color = color_scheme(value)
+            color = color_scheme(value) if color_scheme else Color.from_i(max(0.0, min(1.0, value))).rgb255
             c_dict[key] = color
 
     return c_dict
 
 
-def valuedict_to_colordict(value_dict, color_scheme=i_to_rgb):
+def valuedict_to_colordict(value_dict, color_scheme=None):
     """Convert a dictionary of key-value pairs to a dictionary of key-color pairs.
 
     Parameters
     ----------
     value_dict : dict
         Dictionary of key-value pairs.
-    color_scheme
-        Desired color gradient scheme (i.e. i_to_rgb, i_to_red, i_to_blue, etc.)
+    color_scheme : callable, optional
+        A function that maps a float between 0 and 1 to an RGB tuple (0-255).
+        Default is ``Color.from_i(value).rgb255`` (blue to red).
 
     Returns
     -------
@@ -91,7 +90,7 @@ def valuedict_to_colordict(value_dict, color_scheme=i_to_rgb):
     for key in value_dict:
 
         value = (value_dict[key] - lb) / (ub - lb)
-        color = color_scheme(value)
+        color = color_scheme(value) if color_scheme else Color.from_i(max(0.0, min(1.0, value))).rgb255
         c_dict[key] = color
 
     return c_dict
@@ -99,8 +98,23 @@ def valuedict_to_colordict(value_dict, color_scheme=i_to_rgb):
 
 def compare_initial_current(current_value_dict,
                             initial_value_dict,
-                            color_scheme=i_to_rgb):
-    """
+                            color_scheme=None):
+    """Convert the ratios of current to initial values to a dictionary of key-color pairs.
+
+    Parameters
+    ----------
+    current_value_dict : dict
+        Dictionary of key-value pairs of the current values.
+    initial_value_dict : dict
+        Dictionary of key-value pairs of the initial values.
+    color_scheme : callable, optional
+        A function that maps a float to an RGB tuple (0-255).
+        Default is ``Color.from_i(value).rgb255`` (blue to red).
+
+    Returns
+    -------
+    color_dict : dict
+        Dictionary of key-color pairs, for the keys with a current value larger than 0.01.
 
     """
     color_dict = {}
@@ -117,7 +131,7 @@ def compare_initial_current(current_value_dict,
             else:
                 value = current / initial
 
-            color_dict[key] = color_scheme(value)
+            color_dict[key] = color_scheme(value) if color_scheme else Color.from_i(max(0.0, min(1.0, value))).rgb255
 
     return color_dict
 
@@ -184,7 +198,8 @@ def get_force_colors_uv(volmesh,
                 min_c = abs(c_forces[-1])
                 max_c = abs(c_forces[0])
                 if min_c != max_c:
-                    color = i_to_blue((abs(force) - min_c) / (max_c - min_c))
+                    i = max(0.0, min(1.0, (abs(force) - min_c) / (max_c - min_c)))
+                    color = Color(1 - i, 1 - i, 1.0).rgb255
 
         if force > 0:  # if tension
             color = (255, 0, 0)
@@ -192,7 +207,8 @@ def get_force_colors_uv(volmesh,
                 min_t = t_forces[0]
                 max_t = t_forces[-1]
                 if min_t != max_t:
-                    color = i_to_red((force - min_t) / (max_t - min_t))
+                    i = max(0.0, min(1.0, (force - min_t) / (max_t - min_t)))
+                    color = Color(1.0, 1 - i, 1 - i).rgb255
 
         if abs(force) < tol:  # if close to zero
             color = (255, 255, 255)
@@ -230,7 +246,7 @@ def get_force_colors_hf(volmesh,
         b_hfkeys = volmesh.halffaces_on_boundaries()
         b_hf_areas = {hfkey: volmesh.halfface_area(hfkey) for hfkey in b_hfkeys}
         b_hf_c_dict = valuedict_to_colordict(b_hf_areas,
-                                             color_scheme=i_to_green)
+                                             color_scheme=lambda i: Color(1 - max(0.0, min(1.0, i)), 1.0, 1 - max(0.0, min(1.0, i))).rgb255)
         for hfkey in b_hfkeys:
             hf_color = (0, 255, 0)
 
