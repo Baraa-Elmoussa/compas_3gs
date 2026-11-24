@@ -1,66 +1,66 @@
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
+from collections.abc import Callable
+from typing import Any
 
+from compas.datastructures import Graph
+from compas.datastructures import VolMesh
+from compas.geometry import add_vectors
+from compas.geometry import angle_vectors
+from compas.geometry import centroid_points
+from compas.geometry import dot_vectors
+from compas.geometry import length_vector
 from compas.geometry import normalize_vector
 from compas.geometry import scale_vector
-from compas.geometry import add_vectors
-from compas.geometry import dot_vectors
-from compas.geometry import angle_vectors
-from compas.geometry import length_vector
-from compas.geometry import centroid_points
-
 from compas_3gs.algorithms import volmesh_planarise
-
 from compas_3gs.utilities import print_result
 
+__all__ = ["volmesh_reciprocate"]
 
-__all__ = ['volmesh_reciprocate']
 
-
-def volmesh_reciprocate(volmesh,
-                        formdiagram,
-
-                        kmax=100,
-                        weight=1.0,
-
-                        fix_vkeys=[],
-
-                        edge_min=0.1,
-                        edge_max=10000,
-
-                        tolerance=1.0,
-                        tolerance_boundary=1.0,
-
-                        callback=None,
-                        callback_args=None,
-
-                        print_result_info=False):
+def volmesh_reciprocate(
+    volmesh: VolMesh,
+    formdiagram: Graph,
+    kmax: int = 100,
+    weight: float = 1.0,
+    fix_vkeys: list[int] | None = None,
+    edge_min: float = 0.1,
+    edge_max: float = 10000,
+    tolerance: float = 1.0,
+    tolerance_boundary: float = 1.0,
+    callback: Callable | None = None,
+    callback_args: Any = None,
+    print_result_info: bool = False,
+) -> None:
     """Perpendicularizes the faces of the polyhedral force diagram to the corresponding dual edges in the polyhedral form diagram.
 
     Parameters
     ----------
-    volmesh : VolMesh
+    volmesh
         A volmesh object representing a polyhedral force diagram.
-    formdiagram : VolMesh or Network
+    formdiagram
         A network object representing a polyhedral form diagram.
-    kmax : int, optional [100]
+    kmax
         Maximum number of iterations.
-    weight : float, optional [1.0]
-        A float, between 0 and 1, which determines how much each diagram changes. 1 changes the form diagram only, while 0 changes the force diagram only. Default is ``1.0``.
-    fix_vkeys : list, optional []
-        List of vkeys to fix.
-    edge_min : float, optional [None]
+    weight
+        A float, between 0 and 1, which determines how much each diagram changes.
+        1 changes the form diagram only, while 0 changes the force diagram only.
+    fix_vkeys
+        List of form diagram nodes to fix.
+    edge_min
         Value for minimum edge length to be imposed.
-    edge_max : float, optional [None]
+    edge_max
         Value for maximum edge length allowed.
-    tolerance: float, optional [0.001]
-        Value for convergence tolerance. Deviation is measured by the the dot product of the input and target vectors.
-    callback : callable, optional [None]
-        A user-defined callback function to be executed after every iteration.
-    callback_args : tuple, optional [None]
+    tolerance
+        Convergence tolerance, an angle in degrees: the largest angle between a form edge and
+        the normal of its halfface in the force diagram.
+    tolerance_boundary
+        Convergence tolerance, an angle in degrees: the largest angle between a boundary halfface
+        normal and its initial normal.
+    callback
+        A user-defined callback function to be executed after every iteration,
+        called as `callback(volmesh, formdiagram, k, callback_args)`.
+    callback_args
         Additional parameters to be passed to the callback.
-    print_result_info : bool, optional
+    print_result_info
         If True, print the result of the algorithm.
 
     Raises
@@ -72,16 +72,15 @@ def volmesh_reciprocate(volmesh,
     -----
     The orientations of the boundary faces of the polyhedral force diagram are always fixed by default.
 
-    .. seealso ::
-        compas.geometry.network_parallelise_edges
-
     """
 
     if callback:
         if not callable(callback):
-            raise Exception('Callback is not callable.')
+            raise Exception("Callback is not callable.")
 
-    free_vkeys = list(set(formdiagram.vertices()) - set(fix_vkeys))
+    fix_vkeys = fix_vkeys or []
+
+    free_vkeys = list(set(formdiagram.nodes()) - set(fix_vkeys))
 
     init_normals = {fkey: volmesh.halfface_normal(fkey) for fkey in volmesh.faces()}
 
@@ -96,10 +95,9 @@ def volmesh_reciprocate(volmesh,
     for u, v in formdiagram.edges():
         u_hfkey = volmesh.cell_pair_halffaces(u, v)[0]
         face_normal = scale_vector(volmesh.halfface_normal(u_hfkey), weight)
-        edge_vector = scale_vector(formdiagram.edge_vector(u, v), 1 - weight)
+        edge_vector = scale_vector(formdiagram.edge_direction((u, v)), 1 - weight)
         target = normalize_vector(add_vectors(face_normal, edge_vector))
-        target_vectors[(u, v)] = {'fkey': u_hfkey,
-                                  'target': target}
+        target_vectors[(u, v)] = {"fkey": u_hfkey, "target": target}
         target_normals[u_hfkey] = target
 
     for fkey in boundary_fkeys:
@@ -109,49 +107,47 @@ def volmesh_reciprocate(volmesh,
     #   2. loop
     # --------------------------------------------------------------------------
     for k in range(kmax):
-
         deviation_boundary_perp = 0
 
         # ----------------------------------------------------------------------
         #   3. update form diagram
         # ----------------------------------------------------------------------
         if weight != 0:
-
-            new_form_xyz = {vkey: [] for vkey in formdiagram.vertices()}
+            new_form_xyz = {vkey: [] for vkey in formdiagram.nodes()}
 
             for u, v in target_vectors:
-                target_v = target_vectors[(u, v)]['target']
-                edge_v = formdiagram.edge_vector(u, v, unitized=False)
+                target_v = target_vectors[(u, v)]["target"]
+                edge_v = formdiagram.edge_vector((u, v))
 
                 # target edge length -------------------------------------------
-                l = length_vector(edge_v)
+                length = length_vector(edge_v)
 
-                l_min = formdiagram.edge_attribute((u, v), 'l_min')
-                l_max = formdiagram.edge_attribute((u, v), 'l_max')
+                l_min = formdiagram.edge_attribute((u, v), "l_min")
+                l_max = formdiagram.edge_attribute((u, v), "l_max")
 
                 # min edge
                 if edge_min:
                     l_min = edge_min
-                if l < l_min:
-                    l = l_min
+                if length < l_min:
+                    length = l_min
 
                 # max edge
                 if edge_max:
                     l_max = edge_max
-                if l > l_max:
-                    l = l_max
+                if length > l_max:
+                    length = l_max
 
                 # check edge orientation ---------------------------------------
                 direction = _get_lambda(edge_v, target_v)
-                l *= direction
+                length *= direction
 
                 # collect new coordinates --------------------------------------
                 if u in free_vkeys:
-                    new_u_xyz = add_vectors(formdiagram.vertex_coordinates(v), scale_vector(target_v, -1 * l))
+                    new_u_xyz = add_vectors(formdiagram.node_coordinates(v), scale_vector(target_v, -1 * length))
                     new_form_xyz[u].append(new_u_xyz)
 
                 if v in free_vkeys:
-                    new_v_xyz = add_vectors(formdiagram.vertex_coordinates(u), scale_vector(target_v, l))
+                    new_v_xyz = add_vectors(formdiagram.node_coordinates(u), scale_vector(target_v, length))
                     new_form_xyz[v].append(new_v_xyz)
 
             # compute new vertex coordinates -----------------------------------
@@ -164,9 +160,7 @@ def volmesh_reciprocate(volmesh,
         # ----------------------------------------------------------------------
 
         if weight != 1:
-            volmesh_planarise(volmesh,
-                              kmax=1,
-                              target_normals=target_normals)
+            volmesh_planarise(volmesh, kmax=1, target_normals=target_normals)
 
         # boundary perpness
         for fkey in boundary_fkeys:
@@ -184,9 +178,8 @@ def volmesh_reciprocate(volmesh,
         perpness = _check_deviation(volmesh, formdiagram)
 
         if perpness < tolerance and deviation_boundary_perp < tolerance_boundary:
-
             if print_result_info:
-                print_result('Reciprocation', k, perpness)
+                print_result("Reciprocation", k, perpness)
 
             break
 
@@ -210,7 +203,7 @@ def cellnetwork_reciprocate(cellnetwork):
 # ******************************************************************************
 
 
-def _get_lambda(vector_1, vector_2):
+def _get_lambda(vector_1: list[float], vector_2: list[float]) -> int:
     dot = dot_vectors(vector_1, vector_2)
     if dot < 0:
         return -1
@@ -218,12 +211,12 @@ def _get_lambda(vector_1, vector_2):
         return 1
 
 
-def _check_deviation(volmesh, network):
+def _check_deviation(volmesh: VolMesh, network: Graph) -> float:
     deviation = 0
     for u, v in network.edges():
         u_hf, v_hf = volmesh.cell_pair_halffaces(u, v)
         normal = volmesh.halfface_normal(u_hf)
-        edge = network.edge_vector(u, v, unitized=True)
+        edge = network.edge_direction((u, v))
         perp_check = angle_vectors(normal, edge, deg=True)
         # dot = dot_vectors(normal, edge)
         # perp_check = 1 - abs(dot)
@@ -243,5 +236,5 @@ def _check_deviation(volmesh, network):
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

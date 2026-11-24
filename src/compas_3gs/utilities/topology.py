@@ -1,31 +1,33 @@
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from compas.datastructures import Graph
+    from compas.datastructures import VolMesh
 
 
-__all__ = ['pair_hf_to_uv',
-           'pair_uv_to_hf']
+__all__ = ["pair_hf_to_uv", "pair_uv_to_hf"]
 
 
-def pair_hf_to_uv(volmesh, network):
+def pair_hf_to_uv(volmesh: "VolMesh", network: "Graph") -> dict[int, tuple[int, int]]:
     """Pairs the directed halffaces of a volmesh to the corresponding edge (u, v) of the dual network.
 
     Parameters
     ----------
-    volmesh : VolMesh
+    volmesh
         A volmesh object representing a polyhedral force diagram.
-    network : Network
+    network
         A network object representing a polyhedral form diagram.
 
     Returns
     -------
-    dictionary
-        A dictionary of u_hfkey-(u, v) pairs.
+    dict[int, tuple[int, int]]
+        A dictionary of halfface-edge pairs: the halfface of cell `u` gives `(u, v)`,
+        its opposite halfface, of cell `v`, gives `(v, u)`.
 
     Notes
     -----
-    u_hfkey is an interior halfface of the volmesh that belongs to volmesh.cell[u], which points to volmesh.cell[v].
-    In another words, its pair (or opposite) halfface belongs to volmesh.cell[v].
+    `u_hfkey` is an interior halfface of the volmesh that belongs to cell `u` and points to cell `v`.
+    In other words, its pair (or opposite) halfface belongs to cell `v`.
 
     """
     hf_uv_dict = {}
@@ -38,20 +40,20 @@ def pair_hf_to_uv(volmesh, network):
     return hf_uv_dict
 
 
-def pair_uv_to_hf(network, volmesh):
+def pair_uv_to_hf(network: "Graph", volmesh: "VolMesh") -> dict[tuple[int, int], int]:
     """Pairs the directed edges (u, v) of a network to the corresponding halffaces of the dual volmesh.
 
     Parameters
     ----------
-    volmesh : VolMesh
-        A volmesh object representing a polyhedral force diagram.
-    network : Network
+    network
         A network object representing a polyhedral form diagram.
+    volmesh
+        A volmesh object representing a polyhedral force diagram.
 
     Returns
     -------
-    dictionary
-        A dictionary of (u, v)-u_hfkey pairs.
+    dict[tuple[int, int], int]
+        A dictionary of edge-halfface pairs: `(u, v)` gives the halfface of cell `u` that points to cell `v`.
 
     """
     uv_hf_dict = {}
@@ -74,5 +76,5 @@ def pair_uv_to_hf(network, volmesh):
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

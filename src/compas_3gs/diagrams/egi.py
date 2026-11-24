@@ -1,13 +1,11 @@
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
+from typing import Any
+from typing import Self
 
+from compas.datastructures import VolMesh
+from compas.geometry import add_vectors
 from compas_3gs.datastructures import Mesh3gs
 
-from compas.geometry import add_vectors
-
-
-__all__ = ['EGI']
+__all__ = ["EGI"]
 
 
 class EGI(Mesh3gs):
@@ -17,46 +15,65 @@ class EGI(Mesh3gs):
 
     """
 
-    def __init__(self):
-        super(EGI, self).__init__()
+    def __init__(self, *args: Any, name: str = "EGI", **kwargs: Any) -> None:
+        super().__init__(*args, name=name, **kwargs)
 
-        a = {'origin': (0, 0, 0)}
-        va = {'x_fix': False,
-              'y_fix': False,
-              'z_fix': False,
-              'type': None,
-              'normal': None,
-              'target_area': None}
-        ea = {}
-        fa = {}
-
-        self.attributes.update(a)
-        self.default_vertex_attributes.update(va)
-        self.default_edge_attributes.update(ea)
-        self.default_face_attributes.update(fa)
+        self.attributes.update(
+            {
+                "origin": (0, 0, 0),
+            }
+        )
+        self.default_vertex_attributes.update(
+            {
+                "x_fix": False,
+                "y_fix": False,
+                "z_fix": False,
+                "type": None,
+                "normal": None,
+                "target_area": None,
+            }
+        )
 
     # --------------------------------------------------------------------------
     #   constructors
     # --------------------------------------------------------------------------
 
     @classmethod
-    def from_volmesh_cell(cls, ckey, volmesh):
-        egi = cls()
-        origin = volmesh.cell_centroid(ckey)
-        egi.attributes['name'] = ckey
-        egi.attributes['origin'] = origin
+    def from_volmesh_cell(cls, ckey: int, volmesh: VolMesh) -> Self:
+        """Construct the EGI of a cell of a volmesh.
 
-        halffaces = volmesh.cell_halffaces(ckey)
+        Parameters
+        ----------
+        ckey
+            The identifier of the cell.
+        volmesh
+            The volmesh, a [VolMesh][compas.datastructures.VolMesh].
+
+        Returns
+        -------
+        Self
+            The EGI, with a vertex at `origin + normal` for every halfface of the cell (vertex key = halfface key),
+            and a face for every vertex of the cell (face key = vertex key), with outward normals.
+
+        """
+        egi = cls(name=str(ckey))
+        origin = volmesh.cell_centroid(ckey)
+        egi.attributes["origin"] = origin
+
+        halffaces = volmesh.cell_faces(ckey)
         vertices = volmesh.cell_vertices(ckey)
 
+        # mesh vertex j is vertices[j] and mesh face i is halffaces[i]
+        mesh = volmesh.cell_to_mesh(ckey)
+
         for hfkey in halffaces:
-            normal = volmesh.halfface_oriented_normal(hfkey)
+            normal = volmesh.face_normal(hfkey)
             x, y, z = add_vectors(origin, normal)
             egi.add_vertex(key=hfkey, x=x, y=y, z=z)
 
-        for vkey in vertices:
-            face = volmesh.cell_vertex_halffaces(ckey, vkey)
-            egi.add_face(face, fkey=vkey)
+        for j in mesh.vertices():
+            face = [halffaces[f] for f in mesh.vertex_faces(j, ordered=True)][::-1]
+            egi.add_face(face, fkey=vertices[j])
 
         return egi
 
@@ -72,5 +89,5 @@ class EGI(Mesh3gs):
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

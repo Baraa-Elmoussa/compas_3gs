@@ -1,46 +1,43 @@
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
-
-from compas.geometry import convex_hull
+from compas.datastructures import Graph
+from compas.datastructures import VolMesh
 from compas.geometry import add_vectors
+from compas.geometry import centroid_points
+from compas.geometry import convex_hull
 from compas.geometry import scale_vector
 from compas.geometry import subtract_vectors
+from compas.tolerance import TOL
 
-from compas.utilities import geometric_key
-
-
-__all__ = ['volmesh_ud',
-           'cellnetwork_ud']
+__all__ = ["volmesh_ud", "cellnetwork_ud"]
 
 
-def volmesh_ud(volmesh,
-               network,
-               scale=0.5):
+def volmesh_ud(volmesh: VolMesh, network: Graph, scale: float = 0.5) -> tuple[dict[int, dict], dict[tuple[int, int], dict]]:
     """Computes temporary vertex coordinates for every halfface of a volmesh, for the visualisation of the unified diagram.
 
     Parameters
     ----------
-    volmesh : VolMesh
+    volmesh
         A volmesh object representing a polyhedral force diagram.
-    network : Network
+    network
         A network object representing a polyhedral form diagram.
-    scale : float
-        Unified diagram scale factor,
+    scale
+        Unified diagram scale factor, between 0 and 1.
 
     Returns
     -------
-    halffaces : dictionary
-        A dictionary of dictionaries: hfkey-{vkey: (x, y, z)}.
-    prisms : dictionary
-        A dictinoary of dictinoaries: uv - [face coordinates]
+    tuple[dict[int, dict], dict[tuple[int, int], dict]]
+        The scaled cells, `{ckey: {"vertices": [[x, y, z], ...], "faces": [[i, j, k, ...], ...]}}`,
+        each cell scaled by `scale` towards the corresponding node of the form diagram (moved onto
+        the force diagram), and the prisms between them, `{(u, v): {"vertices": ..., "faces": ...}}`,
+        one per edge of the form diagram.
 
     Raises
     ------
     Exception
         If scale is 0, which means the unified diagram is equivalent to the polyhedral force diagram.
     Exception
-        If scale is 0, which means the unified diagram is equivalent to the polyhedral form diagram.
+        If scale is 1, which means the unified diagram is equivalent to the polyhedral form diagram.
+    AssertionError
+        If scale is not between 0 and 1.
 
     Notes
     -----
@@ -64,7 +61,7 @@ def volmesh_ud(volmesh,
     #   1. current positions of diagrams
     # --------------------------------------------------------------------------
     volmesh_center = volmesh.centroid()
-    network_center = network.datastructure_centroid()
+    network_center = centroid_points(network.nodes_attributes("xyz"))
     translation = subtract_vectors(volmesh_center, network_center)
 
     # --------------------------------------------------------------------------
@@ -105,7 +102,7 @@ def volmesh_ud(volmesh,
                 xyz = volmesh.vertex_coordinates(vertex)
                 arm = scale_vector(subtract_vectors(xyz, base_xyz[cell]), scale)
                 scaled_xyz = add_vectors(base_xyz[cell], arm)
-                gkey = geometric_key(scaled_xyz)
+                gkey = TOL.geometric_key(scaled_xyz)
                 gkey_xyz[gkey] = scaled_xyz
                 new_face.append(gkey)
                 scaled_face_xyz.append(scaled_xyz)
@@ -116,7 +113,7 @@ def volmesh_ud(volmesh,
         vertices = [list(xyz) for gkey, xyz in gkey_xyz.items()]
         scaled_faces = [[gkey_index[gkey] for gkey in face] for face in faces]
 
-        cells[cell] = {'vertices': vertices, 'faces': scaled_faces}
+        cells[cell] = {"vertices": vertices, "faces": scaled_faces}
 
     # cells = {}
     # for cell in volmesh.cells():
@@ -144,7 +141,7 @@ def volmesh_ud(volmesh,
         v_pts = scaled_halffaces[v_hfkey]
         pts = u_pts + v_pts
         prism = convex_hull(pts)  # face as indices of pt_list
-        prism_cells[(u, v)] = {'vertices': pts, 'faces': prism}
+        prism_cells[(u, v)] = {"vertices": pts, "faces": prism}
 
     # for u, v in network.edges():
     #     u_hfkey, v_hfkey = volmesh.cell_pair_halffaces(u, v)
@@ -180,5 +177,5 @@ def cellnetwork_ud(cellnetwork):
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

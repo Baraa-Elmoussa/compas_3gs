@@ -1,38 +1,38 @@
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
+from typing import TYPE_CHECKING
 
-from compas.geometry import cross_vectors
-from compas.geometry import subtract_vectors
-from compas.geometry import normalize_vector
-from compas.geometry import dot_vectors
-from compas.geometry import length_vector
 from compas.geometry import add_vectors
-from compas.geometry import scale_vector
-from compas.geometry import centroid_points_weighted
-from compas.geometry import centroid_points
-from compas.geometry import midpoint_point_point
 from compas.geometry import bestfit_plane
+from compas.geometry import centroid_points
+from compas.geometry import centroid_points_weighted
+from compas.geometry import cross_vectors
 from compas.geometry import distance_point_point
+from compas.geometry import dot_vectors
 from compas.geometry import intersection_line_line
 from compas.geometry import is_point_on_segment
+from compas.geometry import length_vector
+from compas.geometry import midpoint_point_point
+from compas.geometry import normalize_vector
 from compas.geometry import project_point_plane
+from compas.geometry import scale_vector
+from compas.geometry import subtract_vectors
+
+if TYPE_CHECKING:
+    from compas.datastructures import VolMesh
+    from compas_3gs.diagrams import Cell
 
 
-__all__ = ['resultant_vector',
-
-           'polygon_normal_oriented',
-           'polygon_area_oriented',
-           'polygon_area_footprint',
-           'scale_polygon',
-
-           'cell_face_flatness',
-           'cell_face_areaness',
-
-           'volmesh_face_flatness',
-           'volmesh_face_areaness',
-
-           'datastructure_centroid']
+__all__ = [
+    "resultant_vector",
+    "polygon_normal_oriented",
+    "polygon_area_oriented",
+    "polygon_area_footprint",
+    "scale_polygon",
+    "cell_face_flatness",
+    "cell_face_areaness",
+    "volmesh_face_flatness",
+    "volmesh_face_areaness",
+    "datastructure_centroid",
+]
 
 
 # ******************************************************************************
@@ -67,21 +67,19 @@ def resultant_vector(vectors, locations):
 
     Examples
     --------
-    >>> resultant_vector({0 : [ 0.97 , 0.83 , 0.83 ],
-                          1 : [ 0.65 , 0.89 , 0.34 ],
-                          2 : [ 0.68 , 0.63 , 0.97 ]},
-                         {0 : [ 0.97 , 0.83 , 0.83 ],
-                          1 : [ 0.65 , 0.89 , 0.34 ],
-                          2 : [ 0.68 , 0.63 , 0.97 ]})
-    [2.3000000000000003, 2.35, 2.1399999999999997]
-    [0.78129727344020572, 0.78043477156745522, 0.7360930822393742],
+    >>> vectors = {0: [0.97, 0.83, 0.83], 1: [0.65, 0.89, 0.34], 2: [0.68, 0.63, 0.97]}
+    >>> resultant, location = resultant_vector(vectors, vectors)
+    >>> resultant
+    [2.3, 2.35, 2.14]
+    >>> location
+    [0.781, 0.780, 0.736]
 
     """
     points = []
     weights = []
 
     for vkey in vectors:
-        points.append(vectors[vkey])
+        points.append(locations[vkey])
         weights.append(length_vector(vectors[vkey]))
 
     resultant_xyz = centroid_points_weighted(points, weights)
@@ -226,6 +224,7 @@ def untangle_polygon(polygon):
         Reordered polygon point coordinates.
 
     """
+
     def _cross_edges(edge1, edge2):
         a, b = edge1
         c, d = edge2
@@ -340,6 +339,7 @@ def is_polygon_self_intersecting(polygon):
 
     return overlapping, intersecting
 
+
 # ******************************************************************************
 # ******************************************************************************
 # ******************************************************************************
@@ -351,24 +351,25 @@ def is_polygon_self_intersecting(polygon):
 # ******************************************************************************
 
 
-def cell_face_flatness(cell):
+def cell_face_flatness(cell: "Cell") -> dict[int, float]:
     """Compute the flatness of every face of a mesh.
 
     Parameters
     ----------
-    cell : Mesh
+    cell
         Cell as a mesh object.
 
     Returns
     -------
-    dict
-        A dictionary of flatness deviation for every face of the mesh.
+    dict[int, float]
+        A dictionary of flatness deviation for every face of the mesh: the largest distance
+        of a face vertex to the best-fit plane of the face.
 
     """
 
-    flatness_dict = {fkey: 0 for fkey in cell.face}
+    flatness_dict = {fkey: 0 for fkey in cell.faces()}
 
-    for fkey in cell.face:
+    for fkey in cell.faces():
         f_vkeys = cell.face_vertices(fkey)
         f_pts = [cell.vertex_coordinates(vkey) for vkey in f_vkeys]
         dev = polygon_flatness(f_pts)
@@ -378,19 +379,19 @@ def cell_face_flatness(cell):
     return flatness_dict
 
 
-def cell_face_areaness(cell, target_areas):
+def cell_face_areaness(cell: "Cell", target_areas: dict[int, float]) -> dict[int, float]:
     """Compute the areaness of every face of a mesh.
 
     Parameters
     ----------
-    cell : Mesh
+    cell
         Cell as a mesh object.
-    target_areas : dict
+    target_areas
         Dictionary of target areas.
 
     Returns
     -------
-    dict
+    dict[int, float]
         A dictionary of area deviation for each face of the mesh.
 
     """
@@ -414,17 +415,19 @@ def cell_face_areaness(cell, target_areas):
 # ******************************************************************************
 
 
-def volmesh_face_flatness(volmesh):
+def volmesh_face_flatness(volmesh: "VolMesh") -> dict[int, float]:
     """Compute the flatness of every face of a volmesh.
 
     Parameters
     ----------
-    volmesh : volmesh object
+    volmesh
+        A volmesh.
 
     Returns
     -------
-    dict
-        A dictionary of flatness deviation for every face of the volmesh.
+    dict[int, float]
+        A dictionary of flatness deviation for every face of the volmesh (one halfface per face):
+        the largest distance of a face vertex to the best-fit plane of the face.
 
     """
     flatness_dict = {fkey: 0 for fkey in volmesh.faces()}
@@ -439,17 +442,20 @@ def volmesh_face_flatness(volmesh):
     return flatness_dict
 
 
-def volmesh_face_areaness(volmesh, target_areas):
-    """Compute the areaness of every face of a volmesh.
+def volmesh_face_areaness(volmesh: "VolMesh", target_areas: dict[int, float]) -> dict[int, float]:
+    """Compute the areaness of the halffaces of a volmesh that have a target area.
 
     Parameters
     ----------
-    volmesh : volmesh object
+    volmesh
+        A volmesh.
+    target_areas
+        Dictionary of halfface keys and target areas.
 
     Returns
     -------
-    dict
-        A dictionary of area deviation for each face of the volmesh.
+    dict[int, float]
+        A dictionary of area deviation for each halfface in `target_areas`.
 
     """
     areaness_dict = {}
@@ -459,15 +465,6 @@ def volmesh_face_areaness(volmesh, target_areas):
         areaness_dict[hfkey] = abs(target_areas[hfkey] - area)
 
     return areaness_dict
-
-
-def _get_current_volmesh_normals(volmesh):
-    normal_dict = {}
-    for hfkey in volmesh.halfface:
-        center = volmesh.halfface_center(hfkey)
-        normal = volmesh.halfface_normal(hfkey)
-        normal_dict[hfkey] = {'normal': normal, 'center': center}
-    return normal_dict
 
 
 # ******************************************************************************
@@ -511,5 +508,5 @@ def datastructure_centroid(datastructure):
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

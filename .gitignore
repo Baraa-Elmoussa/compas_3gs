@@ -107,7 +107,11 @@ ENV/
 
 .vscode
 node_modules
-src/compas_3gs/web/electron
+
+.DS_Store
+._*
+Thumbs.db
+*.3dmbak
 
 docs/reference/generated
 dist/docs

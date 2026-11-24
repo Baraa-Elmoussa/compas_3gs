@@ -1,28 +1,16 @@
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
-
-from copy import deepcopy
+from collections.abc import Sequence
+from typing import Any
 
 from compas.datastructures import Mesh
-
-from compas.datastructures.mesh import mesh_split_face
-
-from compas.geometry import subtract_vectors
-from compas.geometry import normalize_vector
-from compas.geometry import length_vector
+from compas.geometry import Vector
 from compas.geometry import cross_vectors
+from compas.geometry import length_vector
+from compas.geometry import normal_polygon
+from compas.geometry import normalize_vector
+from compas.geometry import subtract_vectors
+from compas.tolerance import TOL
 
-from compas_rhino.artists import MeshArtist
-
-from compas_rhino.utilities import draw_mesh
-
-from compas_3gs.utilities import polygon_normal_oriented
-from compas_3gs.utilities import polygon_area_oriented
-from compas_3gs.utilities import datastructure_centroid
-
-
-__all__ = ['Mesh3gs']
+__all__ = ["Mesh3gs"]
 
 
 class Mesh3gs(Mesh):
@@ -32,112 +20,77 @@ class Mesh3gs(Mesh):
 
     """
 
-    def __init__(self):
-        super(Mesh3gs, self).__init__()
-
-    # --------------------------------------------------------------------------
-    #   inherited
-    # --------------------------------------------------------------------------
-
-    mesh_split_face = mesh_split_face
-    datastructure_centroid = datastructure_centroid
-
-    def add_edge(self, u, v, attr_dict=None, **kwattr):
-
-        attr = deepcopy(self.default_edge_attributes)
-        if not attr_dict:
-            attr_dict = {}
-        attr_dict.update(kwattr)
-        attr.update(attr_dict)
-
-        if u not in self.vertex:
-            u = self.add_vertex(u)
-        if v not in self.vertex:
-            v = self.add_vertex(v)
-
-        data = self.edge[u].get(v, {})
-        data.update(attr)
-
-        self.edge[u][v] = data
-        if v not in self.halfedge[u]:
-            self.halfedge[u][v] = None
-        if u not in self.halfedge[v]:
-            self.halfedge[v][u] = None
-
-        return u, v
+    def __init__(self, *args: Any, name: str = "Mesh3gs", **kwargs: Any) -> None:
+        super().__init__(*args, name=name, **kwargs)
 
     # --------------------------------------------------------------------------
     # helpers - vertices
     # --------------------------------------------------------------------------
 
-    def vertex_update_xyz(self, vkey, xyz, constrained=True):
-        if constrained:
-            # X
-            if self.vertex[vkey]['x_fix'] is False:
-                self.vertex[vkey]['x'] = xyz[0]
-            # Y
-            if self.vertex[vkey]['y_fix'] is False:
-                self.vertex[vkey]['y'] = xyz[1]
-            # Z
-            if self.vertex[vkey]['z_fix'] is False:
-                self.vertex[vkey]['z'] = xyz[2]
-        else:
-            self.vertex[vkey]['x'] = xyz[0]
-            self.vertex[vkey]['y'] = xyz[1]
-            self.vertex[vkey]['z'] = xyz[2]
+    def vertex_update_xyz(self, vkey: int, xyz: Sequence[float], constrained: bool = True) -> None:
+        """Update the coordinates of a vertex, respecting its per-axis fixity.
+
+        Parameters
+        ----------
+        vkey
+            The identifier of the vertex.
+        xyz
+            The new XYZ coordinates.
+        constrained
+            If True, an axis is only updated if the vertex attribute `x_fix`, `y_fix` or `z_fix`
+            is not True (a missing attribute counts as False).
+            If False, all three coordinates are updated.
+
+        """
+        for axis, value in zip("xyz", xyz):
+            if constrained and self.vertex_attribute(vkey, axis + "_fix"):
+                continue
+            self.vertex_attribute(vkey, axis, value)
 
     # --------------------------------------------------------------------------
     # helpers - faces
     # --------------------------------------------------------------------------
 
-    def face_area(self, fkey):
-        points = self.face_coordinates(fkey)
-        area = polygon_area_oriented(points)
-        return area
+    def face_area(self, fkey: int) -> float:
+        """Compute the vector area of a face.
 
-    def face_normal(self, fkey, unitized=True):
+        Parameters
+        ----------
+        fkey
+            The identifier of the face.
+
+        Returns
+        -------
+        float
+            The length of the area-weighted normal of the face.
+
+        """
+        return length_vector(normal_polygon(self.face_coordinates(fkey), unitized=False))
+
+    def face_normal(self, fkey: int, unitized: bool = True) -> Vector:
+        """Compute the normal of a face.
+
+        Parameters
+        ----------
+        fkey
+            The identifier of the face.
+        unitized
+            If True, the normal is unitized.
+
+        Returns
+        -------
+        Vector
+            The normal of the face. For a face with a zero vector area, the unitized cross product
+            of its first two edges, which is always a unit vector.
+
+        """
         points = self.face_coordinates(fkey)
-        normal = polygon_normal_oriented(points, unitized)
-        if length_vector(normal) == 0:
+        normal = normal_polygon(points, unitized=unitized)
+        if TOL.is_zero(length_vector(normal)):
             uv = subtract_vectors(points[1], points[0])
             vw = subtract_vectors(points[2], points[1])
             normal = normalize_vector(cross_vectors(uv, vw))
-        return normal
-
-    # --------------------------------------------------------------------------
-    # drawing
-    # --------------------------------------------------------------------------
-
-    def draw(self, **kwattr):
-        draw_mesh(self, clear_vertices=True, clear_faces=True, clear_edges=True, **kwattr)
-
-    def clear(self, **kwattr):
-        artist = MeshArtist(self)
-        artist.clear_by_name()
-
-    def draw_vertices(self, **kwattr):
-        artist = MeshArtist(self)
-        artist.draw_vertices(**kwattr)
-
-    def draw_edges(self, **kwattr):
-        artist = MeshArtist(self)
-        artist.draw_edges(**kwattr)
-
-    def draw_faces(self, **kwattr):
-        artist = MeshArtist(self)
-        artist.draw_faces(**kwattr)
-
-    def draw_vertexlabels(self, **kwattr):
-        artist = MeshArtist(self)
-        artist.draw_vertexlabels(**kwattr)
-
-    def draw_edgelabels(self, **kwattr):
-        artist = MeshArtist(self)
-        artist.draw_edgelabels(**kwattr)
-
-    def draw_facelabels(self, **kwattr):
-        artist = MeshArtist(self)
-        artist.draw_facelabels(**kwattr)
+        return Vector(*normal)
 
 
 # ******************************************************************************
@@ -151,5 +104,5 @@ class Mesh3gs(Mesh):
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

@@ -5,10 +5,10 @@
 
 ## Installation
 
-First, create an environment with a specific version of Python.
+First, create an environment with Python 3.12.
 
 ```bash
-$ conda create -n 3gs python=3.7
+$ conda create -n 3gs python=3.12
 ```
 
 Activate the new environment.
@@ -20,13 +20,21 @@ $ conda activate 3gs
 Released versions of ``compas_3gs`` can be installed with *pip*.
 
 ```bash
-$ pip install compas-3gs
+$ pip install compas_3gs
 ```
 
-Then, install compas_3gs for Rhino.
+For development, clone the repository and install it from source with the development dependencies.
 
 ```bash
-$ python -m compas_rhino.install -p compas_3gs
+$ git clone https://github.com/BlockResearchGroup/compas_3gs.git
+$ cd compas_3gs
+$ pip install -e ".[dev]"
+```
+
+The examples draw with [compas_viewer](https://github.com/compas-dev/compas_viewer), which is not installed with ``compas_3gs`` (the development dependencies include it).
+
+```bash
+$ pip install compas_viewer
 ```
 
 ## First Steps

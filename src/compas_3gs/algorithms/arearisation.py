@@ -1,37 +1,55 @@
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
+from collections.abc import Callable
+from collections.abc import Sequence
+from typing import Any
 
 from compas.geometry import add_vectors
 from compas.geometry import dot_vectors
 from compas.geometry import scale_vector
-
 from compas_3gs.algorithms.other import golden_section_search
-
-from compas_3gs.operations import cell_split_indet_face_vertices
+from compas_3gs.diagrams import Cell
 from compas_3gs.operations import cell_relocate_face
+from compas_3gs.operations import cell_split_indet_face_vertices
+
+__all__ = ["cell_arearise_face"]
 
 
-__all__ = ['cell_arearise_face']
+def cell_arearise_face(cell: Cell, fkey: int, target_area: float, tol: float = 1e-3, callback: Callable | None = None, callback_args: Any = None) -> None:
+    """Move a face of a cell along its normal until it reaches a target area.
 
+    The indeterminate vertices of the face are split first. The distance to move the face is found
+    with a golden section search on the difference between the face area and the target area.
 
-def cell_arearise_face(cell,
-                       fkey,
-                       target_area,
+    Parameters
+    ----------
+    cell
+        A cell.
+    fkey
+        Identifier of the face.
+    target_area
+        The target area of the face.
+    tol
+        Convergence tolerance of the search, an area: the difference between the face area and the target area.
+    callback
+        A user-defined callback function to be executed after every evaluation,
+        called as `callback(cell, callback_args)`.
+    callback_args
+        Additional parameters to be passed to the callback.
 
-                       tol=1e-3,
+    Raises
+    ------
+    Exception
+        If a callback is provided, but it is not callable,
+        or if moving the face along its normal does not change its area.
 
-                       callback=None,
-                       callback_args=None):
-
+    """
     if callback:
         if not callable(callback):
-            raise Exception('Callback is not callable.')
+            raise Exception("Callback is not callable.")
 
     cell_split_indet_face_vertices(cell, fkey)
 
-    area = cell.face_oriented_area(fkey)
-    normal = cell.face_oriented_normal(fkey)
+    area = cell.face_area(fkey)
+    normal = cell.face_normal(fkey)
     center = cell.face_centroid(fkey)
 
     # --------------------------------------------------------------------------
@@ -86,10 +104,10 @@ def cell_arearise_face(cell,
 # ******************************************************************************
 
 
-def _get_move_direction(cell, fkey):
+def _get_move_direction(cell: Cell, fkey: int) -> int:
 
-    normal = cell.face_oriented_normal(fkey)
-    area = cell.face_oriented_area(fkey)
+    normal = cell.face_normal(fkey)
+    area = cell.face_area(fkey)
     center = cell.face_center(fkey)
 
     new_center = add_vectors(center, normal)
@@ -105,20 +123,20 @@ def _get_move_direction(cell, fkey):
     cell_relocate_face(cell, fkey, center, normal)
 
     if new_area == area:
-        raise Exception('Pulling this face will not change its area!')
+        raise Exception("Pulling this face will not change its area!")
 
     return move_dir
 
 
-def _evaluate_new_face_area(cell, fkey, xyz, init_normal=None):
+def _evaluate_new_face_area(cell: Cell, fkey: int, xyz: Sequence[float], init_normal: Sequence[float] | None = None) -> float:
 
-    if not init_normal:
+    if init_normal is None:
         init_normal = cell.face_normal(fkey)
 
     cell_relocate_face(cell, fkey, xyz, init_normal)
 
-    new_area = cell.face_oriented_area(fkey)
-    new_normal = cell.face_oriented_normal(fkey)
+    new_area = cell.face_area(fkey)
+    new_normal = cell.face_normal(fkey)
 
     if dot_vectors(init_normal, new_normal) < 0:
         new_area *= -1
@@ -137,5 +155,5 @@ def _evaluate_new_face_area(cell, fkey, xyz, init_normal=None):
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

@@ -1,30 +1,26 @@
-from compas.geometry import add_vectors
-from compas.geometry import subtract_vectors
-from compas.geometry import scale_vector
-
+from collections.abc import Sequence
 from itertools import groupby
 
+from compas.datastructures import Graph
 from compas.datastructures import Mesh
-
+from compas.datastructures import VolMesh
+from compas.geometry import Frame
+from compas.geometry import Scale
+from compas.geometry import centroid_points
 from compas.geometry import convex_hull
-
-from compas_3gs.utilities import datastructure_centroid
-
 from compas_3gs.operations import cell_merge_coplanar_adjacent_faces
 
-
-__all__ = ['point_reflection',
-
-           'volmesh_vertex_lift',
-           'volmesh_vertex_merge',
-
-           'volmesh_halfface_pinch',
-           'volmesh_halfface_extrude',
-           'volmesh_halfface_subdivide',
-           'volmesh_merge_adjacent_halffaces',
-
-           'volmesh_cell_split_vertex',
-           'volmesh_cell_subdivide_barycentric']
+__all__ = [
+    "point_reflection",
+    "volmesh_vertex_lift",
+    "volmesh_vertex_merge",
+    "volmesh_halfface_pinch",
+    "volmesh_halfface_extrude",
+    "volmesh_halfface_subdivide",
+    "volmesh_merge_adjacent_halffaces",
+    "volmesh_cell_split_vertex",
+    "volmesh_cell_subdivide_barycentric",
+]
 
 
 # ******************************************************************************
@@ -38,30 +34,34 @@ __all__ = ['point_reflection',
 # ******************************************************************************
 
 
-def point_reflection(datastructure):
-    """Inverts a datastructure through its centroid.
+def point_reflection(datastructure: Graph | Mesh | VolMesh) -> None:
+    """Reflect a datastructure through the centroid of its vertices, in place.
+
+    Every point `p` moves to `2c - p`, with `c` the average of the vertex (or node) coordinates.
 
     Parameters
     ----------
     datastructure
-        A network, mesh or volmesh object.
+        A graph, mesh or volmesh.
 
-    Returns
-    -------
-        The datastructure with new vertex coordinates.
+    Notes
+    -----
+    Reflecting every point keeps the direction of each face normal, so the normals stay parallel
+    to the edges of the form diagram, while the cells of a volmesh (and a closed mesh) turn inside
+    out: their faces point inward. This is the switch between compression and tension, see the
+    attribute `convention` of a force diagram.
 
     References
     ----------
-    .. [1] https://en.wikipedia.org/wiki/Point_reflection
+    - <https://en.wikipedia.org/wiki/Point_reflection>
 
     """
-    center = datastructure_centroid(datastructure)
+    if isinstance(datastructure, Graph):
+        center = centroid_points(datastructure.nodes_attributes("xyz"))
+    else:
+        center = centroid_points(datastructure.vertices_attributes("xyz"))
 
-    for vkey in datastructure.vertex:
-        xyz = datastructure.vertex_coordinates(vkey)
-        vector = scale_vector(subtract_vectors(center, xyz), 2)
-        new_xyz = add_vectors(xyz, vector)
-        datastructure.vertex_update_xyz(vkey, new_xyz, constrained=False)
+    datastructure.transform(Scale.from_factors([-1, -1, -1], frame=Frame(center, [1, 0, 0], [0, 1, 0])))
 
 
 def reverse_cycle_directions(volmesh):
@@ -79,19 +79,29 @@ def reverse_cycle_directions(volmesh):
 # ******************************************************************************
 
 
-def volmesh_vertex_lift(volmesh, vkey, target_xyz, hfkeys):
+def volmesh_vertex_lift(volmesh: VolMesh, vkey: int, target_xyz: Sequence[float], hfkeys: list[int]) -> VolMesh:
     """Duplicates and lifts a vertex, then creates cells using the vertex halffaces and the duplicated vertex.
 
     Parameters
     ----------
-    volmesh : VolMesh
+    volmesh
         A volmesh object representing a polyhedral force diagram.
-    vkey : int
+    vkey
         The key of the vertex to lift.
-    hfkeys : list
-        List of halfface keys to create new cells from.
-    xyz : tuple
+    target_xyz
         Target xyz coordinates of the lifted vertex.
+    hfkeys
+        List of halfface keys to create new cells from.
+
+    Returns
+    -------
+    VolMesh
+        The volmesh, with one new cell per halfface.
+
+    Raises
+    ------
+    Exception
+        If the vertex is not on the boundary.
 
     Notes
     -----
@@ -99,13 +109,13 @@ def volmesh_vertex_lift(volmesh, vkey, target_xyz, hfkeys):
 
     See Also
     --------
-    * :func:`compas_3gs.operations.face_pinch`
+    `volmesh_halfface_pinch`
 
     """
 
     # check if vertex is interior ----------------------------------------------
     if not volmesh.is_vertex_on_boundary(vkey):
-        raise Exception('This vertex is interior.')
+        raise Exception("This vertex is interior.")
 
     # add new, lifted vertex ---------------------------------------------------
     x, y, z = target_xyz
@@ -122,28 +132,43 @@ def volmesh_vertex_lift(volmesh, vkey, target_xyz, hfkeys):
     return volmesh
 
 
-def volmesh_vertex_merge(volmesh, vkeys, target_xyz):
+def volmesh_vertex_merge(volmesh: VolMesh, vkeys: list[int], target_xyz: Sequence[float]) -> VolMesh:
     """Merges specified vertices to a single vertex.
+
+    Every cell around the vertices is rebuilt with the new vertex in place of the merged ones.
+    The attributes of the cells, and of the faces and edges that remain, are kept.
 
     Parameters
     ----------
-    volmesh : VolMesh
+    volmesh
         A volmesh object representing a polyhedral force diagram.
-    vkeys : list
+    vkeys
         List of vertices to merge.
-    target_xyz : tuple
+    target_xyz
         Target xyz coordinates of the vertices to be merged.
+
+    Returns
+    -------
+    VolMesh
+        The volmesh, with the merged vertex.
+
+    Raises
+    ------
+    Exception
+        If the vertices are not a continuous chain of halfedges in every halfface they share.
 
     Notes
     -----
     As implemented, the merging vertices (in any combination) must be a continuous chain of halfedges of a halfface.
     For example, vertices 1 and 3 cannot be merged.
 
+    ```
     0 ------ 1
     |        |
     |        |
     |        |
     3 ------ 2
+    ```
 
     """
 
@@ -156,7 +181,7 @@ def volmesh_vertex_merge(volmesh, vkeys, target_xyz):
             hf_vkeys[hfkey].append(vkey)
 
     for hfkey in hf_vkeys:
-        all_vkeys = volmesh.halfface[hfkey]
+        all_vkeys = volmesh.halfface_vertices(hfkey)
         test_vkeys = set(hf_vkeys[hfkey])
 
         if len(test_vkeys) == 1:
@@ -172,58 +197,54 @@ def volmesh_vertex_merge(volmesh, vkeys, target_xyz):
                 raise Exception("Illegal merge!")
 
     # get vertex cells ---------------------------------------------------------
-    new_vkey = volmesh._get_vertex_key(None)
-    vertices = {new_vkey: target_xyz}
-
-    cell_vkeys = {}
+    ckeys = []
     for vkey in vkeys:
         for ckey in volmesh.vertex_cells(vkey):
-            if ckey not in cell_vkeys:
-                cell_vkeys[ckey] = []
-            cell_vkeys[ckey].append(vkey)
+            if ckey not in ckeys:
+                ckeys.append(ckey)
+
+    x, y, z = target_xyz
+    new_vkey = volmesh.add_vertex(x=x, y=y, z=z)
 
     # construct new cell halffaces ---------------------------------------------
     cells = {}
-    for ckey in cell_vkeys:
-        cell_halffaces = {}
-        vkeys = cell_vkeys[ckey]
-
-        for hfkey in volmesh.cell_halffaces(ckey):
-            halfface = [vkey for vkey in volmesh.halfface[hfkey]]
-            for index, item in enumerate(halfface):
-                if item in vkeys:
-                    halfface[index] = new_vkey
-            halfface = [key[0] for key in groupby(halfface)]
+    cell_attributes = {}
+    face_attributes = {}
+    edge_attributes = {}
+    for ckey in ckeys:
+        cell_halffaces = []
+        for hfkey in volmesh.cell_faces(ckey):
+            halfface = [new_vkey if key in vkeys else key for key in volmesh.halfface_vertices(hfkey)]
+            halfface = [key for key, _ in groupby(halfface)]
+            if len(halfface) > 1 and halfface[0] == halfface[-1]:
+                halfface = halfface[:-1]
             if len(set(halfface)) > 2:
-                cell_halffaces[hfkey] = halfface
+                cell_halffaces.append(halfface)
+                face_attributes[frozenset(halfface)] = volmesh.face_attributes(hfkey)
         cells[ckey] = cell_halffaces
-        for c_vkey in volmesh.cell_vertices(ckey):
-            vertex_ckeys = volmesh.vertex_cells(c_vkey)
-            if len(vertex_ckeys) == 1:
-                if c_vkey not in vkeys:
-                    vertices[c_vkey] = volmesh.vertex_coordinates(c_vkey)
+        cell_attributes[ckey] = volmesh.cell_attributes(ckey)
+        for edge in volmesh.cell_edges(ckey):
+            u, v = [new_vkey if key in vkeys else key for key in edge]
+            if u != v:
+                edge_attributes[frozenset((u, v))] = volmesh.edge_attributes(edge)
+
+    for ckey in ckeys:
         volmesh.delete_cell(ckey)
 
-    # add vertices -------------------------------------------------------------
-    for vkey in vertices:
-        x, y, z = vertices[vkey]
-        volmesh.add_vertex(vkey=vkey, x=x, y=y, z=z)
-
-    # add halffaces and cells --------------------------------------------------
+    # add cells and copy the attributes back -----------------------------------
     for ckey in cells:
-        volmesh.cell[ckey] = {}
-        for hfkey in cells[ckey]:
-            vertices = cells[ckey][hfkey]
-            volmesh.add_halfface(vertices, fkey=hfkey)
-            vertices = volmesh.halfface[hfkey]
-            for i in range(-2, len(vertices) - 2):
-                u = vertices[i]
-                v = vertices[i + 1]
-                w = vertices[i + 2]
-                if u not in volmesh.cell[ckey]:
-                    volmesh.cell[ckey][u] = {}
-                volmesh.cell[ckey][u][v] = hfkey
-                volmesh.plane[u][v][w] = ckey
+        volmesh.add_cell(cells[ckey], ckey=ckey)
+        volmesh.cell_attributes(ckey, names=cell_attributes[ckey].keys(), values=cell_attributes[ckey].values())
+        for hfkey in volmesh.cell_faces(ckey):
+            attr = face_attributes.get(frozenset(volmesh.halfface_vertices(hfkey)), {})
+            for name, value in attr.items():
+                volmesh.face_attribute(hfkey, name, value)
+        for edge in volmesh.cell_edges(ckey):
+            attr = edge_attributes.get(frozenset(edge), {})
+            for name, value in attr.items():
+                volmesh.edge_attribute(edge, name, value)
+
+    volmesh.remove_unused_vertices()
 
     # --------------------------------------------------------------------------
     return volmesh
@@ -270,8 +291,22 @@ def volmesh_halfface_subdivide(volmesh, hfkey):
     raise NotImplementedError
 
 
-def volmesh_halfface_pinch(volmesh, hfkey, xyz):
-    """
+def volmesh_halfface_pinch(volmesh: VolMesh, hfkey: int, xyz: Sequence[float]) -> VolMesh:
+    """Add a pyramid cell on a boundary halfface, with its apex at a new vertex.
+
+    Parameters
+    ----------
+    volmesh
+        A volmesh object representing a polyhedral force diagram.
+    hfkey
+        The boundary halfface to pinch.
+    xyz
+        XYZ coordinates of the apex.
+
+    Returns
+    -------
+    VolMesh
+        The volmesh, with the new cell.
 
     """
 
@@ -286,16 +321,38 @@ def volmesh_halfface_pinch(volmesh, hfkey, xyz):
     return volmesh
 
 
-def volmesh_merge_adjacent_halffaces(volmesh, hfkeys):
+def volmesh_merge_adjacent_halffaces(volmesh: VolMesh, hfkeys: list[int]) -> VolMesh:
+    """Add a cell on a chain of adjacent boundary halffaces: the convex hull of their vertices.
+
+    Coplanar faces of the hull are merged. The new cell shares the given halffaces with the volmesh.
+
+    Parameters
+    ----------
+    volmesh
+        A volmesh object representing a polyhedral force diagram.
+    hfkeys
+        The boundary halffaces, each one adjacent to at least one other.
+
+    Returns
+    -------
+    VolMesh
+        The volmesh, with the new cell.
+
+    Raises
+    ------
+    ValueError
+        If a halfface is interior, or if the halffaces are not chained.
+
+    """
 
     # check halffaces ----------------------------------------------------------
     for hfkey in hfkeys:
         if not volmesh.is_halfface_on_boundary(hfkey):
-            raise ValueError('Halfface {} is interior.'.format(hfkey))
+            raise ValueError("Halfface {} is interior.".format(hfkey))
     if not _are_halffaces_chained(volmesh, hfkeys):
-        raise ValueError('These halffaces are not chained.')
+        raise ValueError("These halffaces are not chained.")
     # --------------------------------------------------------------------------
-    halffaces = [volmesh.halfface[hfkey] for hfkey in hfkeys]
+    halffaces = [volmesh.halfface_vertices(hfkey) for hfkey in hfkeys]
     # --------------------------------------------------------------------------
     vkeys = set()
     for hfkey in hfkeys:
@@ -323,8 +380,11 @@ def volmesh_merge_adjacent_halffaces(volmesh, hfkeys):
     cell_merge_coplanar_adjacent_faces(cell)
 
     # get correct direction of faces -------------------------------------------
-    faces = [cell.face[fkey] for fkey in cell.face]
-    if halffaces[0] in faces:
+    # a face of the hull may list the vertices of halffaces[0] from another start vertex
+    faces = [cell.face_vertices(fkey) for fkey in cell.faces()]
+    first = halffaces[0]
+    rotations = [first[i:] + first[:i] for i in range(len(first))]
+    if any(face in rotations for face in faces):
         new_faces = [face[::-1] for face in faces]
     else:
         new_faces = faces
@@ -345,60 +405,68 @@ def volmesh_merge_adjacent_halffaces(volmesh, hfkeys):
 # ******************************************************************************
 
 
-def volmesh_cell_split_vertex(self, vkey, hfkey1, hfkey2):
+def volmesh_cell_split_vertex(volmesh: VolMesh, vkey: int, hfkey1: int, hfkey2: int) -> None:
+    """Split a vertex of a single-cell volmesh between two of its halffaces.
 
-    if len(self.cell) > 1:
-        raise ValueError('This is a multi-cell volmesh.')
+    Raises
+    ------
+    NotImplementedError
+        Always: the method relied on an EGI stored per cell in `c_data` (compas 0.x).
 
-    ckey = self.cell.keys()[0]
-    halffaces = self.cell_vertex_halffaces(ckey, vkey)
-    i = halffaces.index(hfkey1)
-    j = halffaces.index(hfkey2)
-
-    if i + 1 == j or j + 1 == i:
-        raise ValueError('The two halffaces are adjacent.')
-
-    egi = self.c_data[ckey]['egi']
-    hfkeys = egi.face_vertices(vkey)
-
-    f, g = egi.mesh_split_face(vkey, hfkey1, hfkey2)
-
-    x, y, z = self.vertex_coordinates(vkey)
-    self.add_vertex(key=f, x=x, y=y, z=z)
-    self.add_vertex(key=g, x=x, y=y, z=z)
-
-    # new halffaces ------------------------------------------------------------
-    for hfkey in hfkeys:
-        new_vkeys = egi.vertex_faces(hfkey, ordered=True)
-        self.add_halfface(new_vkeys[::-1], fkey=hfkey)
-
-    self.cell_vertex_delete(vkey)
-
-    print(egi.face)
+    """
+    raise NotImplementedError("volmesh_cell_split_vertex relied on the cell EGI stored in `c_data` (compas 0.x) and is not available.")
 
 
-def volmesh_cell_subdivide_barycentric(volmesh, ckey):
-    """Subdivide a cell of a volmesh.
+def volmesh_cell_subdivide_barycentric(volmesh: VolMesh, ckey: int) -> list[int]:
+    """Subdivide a cell of a volmesh into pyramids, one per face, with their apex at the cell center.
+
+    The attributes of the faces and edges of the cell are kept; the new cells get the default
+    cell attributes.
+
+    Parameters
+    ----------
+    volmesh
+        A volmesh object representing a polyhedral force diagram.
+    ckey
+        The identifier of the cell.
+
+    Returns
+    -------
+    list[int]
+        The identifiers of the new cells.
 
     """
     new_ckeys = []
     x, y, z = volmesh.cell_center(ckey)
+
+    halffaces = [volmesh.halfface_vertices(hfkey) for hfkey in volmesh.cell_faces(ckey)]
+    face_attributes = {frozenset(volmesh.halfface_vertices(hfkey)): volmesh.face_attributes(hfkey) for hfkey in volmesh.cell_faces(ckey)}
+    edge_attributes = {frozenset(edge): volmesh.edge_attributes(edge) for edge in volmesh.cell_edges(ckey)}
+
+    volmesh.delete_cell(ckey)
+
     w = volmesh.add_vertex(x=x, y=y, z=z)
 
-    halffaces = volmesh.cell_halffaces(ckey)
+    for halfface in halffaces:
+        cell_halffaces = [halfface]
 
-    for hfkey in halffaces:
-        cell_halffaces = [volmesh.halfface_vertices(hfkey)]
-
-        halfedges = volmesh.halfface_halfedges(hfkey)
+        halfedges = zip(halfface, halfface[1:] + halfface[:1])
 
         for u, v in halfedges:
             cell_halffaces.append([w, v, u])
 
-        volmesh.delete_halfface(hfkey)
         new_ckeys.append(volmesh.add_cell(cell_halffaces))
 
-    del volmesh.cell[ckey]
+    # copy the attributes back -------------------------------------------------
+    for new_ckey in new_ckeys:
+        for hfkey in volmesh.cell_faces(new_ckey):
+            attr = face_attributes.get(frozenset(volmesh.halfface_vertices(hfkey)), {})
+            for name, value in attr.items():
+                volmesh.face_attribute(hfkey, name, value)
+        for edge in volmesh.cell_edges(new_ckey):
+            attr = edge_attributes.get(frozenset(edge), {})
+            for name, value in attr.items():
+                volmesh.edge_attribute(edge, name, value)
 
     return new_ckeys
 
@@ -414,14 +482,15 @@ def volmesh_cell_subdivide_barycentric(volmesh, ckey):
 # ******************************************************************************
 
 
-def _are_halffaces_chained(volmesh, hfkeys):
+def _are_halffaces_chained(volmesh: VolMesh, hfkeys: list[int]) -> bool:
     chained = set()
 
     for hfkey_1 in hfkeys:
         nbrs = []
 
+        # edge_halffaces lists the halffaces with the halfedge in the given direction only
         for u, v in volmesh.halfface_halfedges(hfkey_1):
-            nbrs += volmesh.edge_halffaces(u, v)
+            nbrs += volmesh.edge_halffaces((u, v)) + volmesh.edge_halffaces((v, u))
 
         for hfkey_2 in hfkeys:
             if hfkey_2 != hfkey_1 and hfkey_2 in nbrs:
@@ -445,5 +514,5 @@ def _are_halffaces_chained(volmesh, hfkeys):
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

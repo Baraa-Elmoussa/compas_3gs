@@ -1,23 +1,14 @@
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
+from collections.abc import Sequence
 
-from compas.datastructures import mesh_dual
-
-from compas.geometry import dot_vectors
 from compas.geometry import distance_point_point
-from compas.geometry import midpoint_point_point
+from compas.geometry import dot_vectors
 from compas.geometry import intersection_line_plane
-
+from compas.geometry import midpoint_point_point
+from compas.tolerance import TOL
 from compas_3gs.diagrams import EGI
+from compas_3gs.diagrams import Cell
 
-
-__all__ = ['cell_split_indet_face_vertices',
-           'cell_collapse_short_edge',
-
-           'cell_relocate_face',
-           'cell_face_subdivide_barycentric',
-           'cell_merge_coplanar_adjacent_faces']
+__all__ = ["cell_split_indet_face_vertices", "cell_collapse_short_edge", "cell_relocate_face", "cell_face_subdivide_barycentric", "cell_merge_coplanar_adjacent_faces"]
 
 
 # ******************************************************************************
@@ -31,14 +22,14 @@ __all__ = ['cell_split_indet_face_vertices',
 # ******************************************************************************
 
 
-def cell_split_indet_face_vertices(cell, fkey):
+def cell_split_indet_face_vertices(cell: Cell, fkey: int) -> Cell:
     """Split all indeterminate vertices of a cell face.
 
     Parameters
     ----------
-    cell : Mesh
+    cell
         Cell as a mesh object.
-    fkey : hashable
+    fkey
         Identifier of the face.
 
     Returns
@@ -51,13 +42,12 @@ def cell_split_indet_face_vertices(cell, fkey):
     An indeterminate vertex is defined as a vertex with degree or valency of 3 or greater.
 
     """
-    egi = mesh_dual(cell, EGI)
+    egi = cell.dual(cls=EGI)
 
     f_vkeys = cell.face_vertices(fkey)
     egi_nbr_vkeys = egi.vertex_neighbors(fkey)
 
     for egi_fkey in f_vkeys:
-
         fkeys = egi.face_vertices(egi_fkey)
         i = fkeys.index(fkey)
         fkeys = fkeys[i:] + fkeys[:i]
@@ -68,8 +58,7 @@ def cell_split_indet_face_vertices(cell, fkey):
         x, y, z = cell.vertex_coordinates(vkey_del)
 
         for vkey in egi_face_vertices:
-
-            f, g = egi.mesh_split_face(vkey_del, fkey, vkey)
+            f, g = egi.split_face(vkey_del, fkey, vkey)
 
             cell.delete_vertex(vkey_del)
 
@@ -95,23 +84,26 @@ def cell_split_indet_face_vertices(cell, fkey):
 # ******************************************************************************
 
 
-def cell_collapse_short_edge(cell, u, v, min_length=0.1):
-    """Collapse short edges of a cell.
+def cell_collapse_short_edge(cell: Cell, u: int, v: int, min_length: float = 0.1) -> Cell:
+    """Collapse a short edge of a cell geometrically.
+
+    If the edge is shorter than `min_length`, both vertices move to its midpoint,
+    respecting their fixity. The topology of the cell is unchanged.
 
     Parameters
     ----------
-    cell : Mesh
+    cell
         Cell as a mesh object.
-    u : hashable
+    u
         The key of the start vertex.
-    v : hashable
+    v
         The key of the end vertex.
-    min_length : float
+    min_length
         Minimum length of edges to be collapsed.
 
     Returns
     -------
-    cell : Mesh
+    Cell
         Updated cell.
 
     """
@@ -138,28 +130,29 @@ def cell_collapse_short_edge(cell, u, v, min_length=0.1):
 # ******************************************************************************
 
 
-def cell_cull_zero_faces(cell):
+def cell_cull_zero_faces(cell: Cell) -> None:
     pass
 
 
-def cell_relocate_face(cell, fkey, xyz, normal):
-    """Relocate the face of a mesh.
+def cell_relocate_face(cell: Cell, fkey: int, xyz: Sequence[float], normal: Sequence[float]) -> Cell:
+    """Relocate the face of a cell to a target plane.
 
     Parameters
     ----------
-    cell : Mesh
+    cell
         Cell as a mesh object.
-    fkey : hashable
+    fkey
         Identifier of the face.
-    xyz : tuple
-        xyz coordinates of the new target plane.
-    normal : tuple
-        Target normal vector.
+    xyz
+        XYZ coordinates of a point on the target plane.
+    normal
+        Normal vector of the target plane.
 
     Returns
     -------
-    cell : Mesh
+    Cell
         Updated cell.
+
     """
 
     cell_split_indet_face_vertices(cell, fkey)
@@ -177,62 +170,81 @@ def cell_relocate_face(cell, fkey, xyz, normal):
                 edges[u] = v
 
     for u in edges:
-        line = cell.edge_coordinates(u, edges[u])
+        line = cell.edge_coordinates((u, edges[u]))
         it = intersection_line_plane(line, plane)
         cell.vertex_update_xyz(u, it, constrained=False)
 
     return cell
 
 
-def cell_merge_coplanar_adjacent_faces(cell, tol=0.001):
+def cell_merge_coplanar_adjacent_faces(cell: Cell, tol: float | None = None) -> Cell:
+    """Merge adjacent faces of a cell that are coplanar.
 
-    initial_faces = [key for key in cell.face]
-    current_faces = [key for key in cell.face]
+    Each face is merged with the neighbors for which `1 - dot(n1, n2) < tol`, with `n1` and `n2`
+    the unit normals of the two faces. A merged face gets a new key.
+
+    Parameters
+    ----------
+    cell
+        Cell as a mesh object.
+    tol
+        Tolerance on `1 - dot(n1, n2)`. Default is `TOL.approximation`.
+
+    Returns
+    -------
+    Cell
+        Updated cell.
+
+    """
+    tol = TOL.approximation if tol is None else tol
+
+    initial_faces = list(cell.faces())
+    current_faces = list(cell.faces())
 
     for fkey in initial_faces:
-
         if fkey in current_faces:
             normal = cell.face_normal(fkey)
 
-            faces_to_delete = []
+            # a neighbor that shares several edges with the face is listed once per edge
+            nbr_fkeys = list(dict.fromkeys(cell.face_neighbors(fkey)))
 
-            for nbr_fkey in cell.face_neighbours(fkey):
+            faces_to_merge = []
+            for nbr_fkey in nbr_fkeys:
                 nbr_normal = cell.face_normal(nbr_fkey)
                 dot = dot_vectors(normal, nbr_normal)
                 if 1 - dot < tol:
-                    faces_to_delete.append(nbr_fkey)
+                    faces_to_merge.append(nbr_fkey)
 
-            if faces_to_delete:
-                new_halfedges = cell.face_halfedges(fkey)
-                for del_fkey in faces_to_delete:
-                    for u, v in cell.face_halfedges(del_fkey):
-                        if (v, u) in new_halfedges:
-                            new_halfedges.remove((v, u))
-                        else:
-                            new_halfedges.append((u, v))
-
-                new_face = list(new_halfedges[0])
-
-                for i in range(1, len(new_halfedges)):
-                    u, v = new_halfedges[i]
-                    if u in new_face:
-                        index = new_face.index(u)
-                        new_face.insert(index + 1, v)
-                    else:
-                        index = new_face.index(v)
-                        new_face.insert(index, u)
-
-                for key in faces_to_delete:
-                    cell.delete_face(key)
-                    current_faces.remove(key)
-
-                cell.add_face(vertices=new_face, fkey=fkey)
+            if faces_to_merge:
+                current_faces.remove(fkey)
+                key = fkey
+                # merge two faces at a time
+                for nbr_fkey in faces_to_merge:
+                    key = cell.merge_faces([key, nbr_fkey])
+                    current_faces.remove(nbr_fkey)
+                current_faces.append(key)
 
     return cell
 
 
-def cell_face_subdivide_barycentric(cell, fkey):
-    raise NotImplementedError
+def cell_face_subdivide_barycentric(cell: Cell, fkey: int) -> Cell:
+    """Subdivide a face of a cell into a fan of triangles around its centroid.
+
+    Parameters
+    ----------
+    cell
+        Cell as a mesh object.
+    fkey
+        Identifier of the face.
+
+    Returns
+    -------
+    Cell
+        Updated cell.
+
+    """
+    cell.insert_vertex(fkey, xyz=cell.face_centroid(fkey))
+    return cell
 
 
 # ******************************************************************************
@@ -246,5 +258,5 @@ def cell_face_subdivide_barycentric(cell, fkey):
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

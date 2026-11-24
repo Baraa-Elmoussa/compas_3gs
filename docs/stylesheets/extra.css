@@ -1,0 +1,18 @@
+/* figures: line drawings on white, also in the dark theme */
+.md-typeset img {
+  background: #ffffff;
+  border-radius: 0.2rem;
+}
+
+/* the download boxes of the user manual */
+.md-typeset .card {
+  margin: 1em 0;
+  padding: 0.6rem 1rem;
+  border: 0.05rem solid var(--md-default-fg-color--lightest);
+  border-radius: 0.2rem;
+  background: var(--md-code-bg-color);
+}
+
+.md-typeset .card-title {
+  font-weight: 700;
+}

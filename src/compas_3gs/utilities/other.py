@@ -1,26 +1,14 @@
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
+from collections.abc import Callable
+from collections.abc import Hashable
+from collections.abc import Sequence
 
+from compas.colors import Color
+from compas.datastructures import Graph
+from compas.datastructures import VolMesh
 from compas.geometry import dot_vectors
-
-from compas.utilities import i_to_rgb
-from compas.utilities import i_to_blue
-from compas.utilities import i_to_green
-from compas.utilities import i_to_red
-
 from compas_3gs.utilities.topology import pair_uv_to_hf
 
-
-__all__ = ['get_index_colordict',
-           'valuedict_to_colordict',
-           'compare_initial_current',
-
-           'get_force_mags',
-           'get_force_colors_uv',
-           'get_force_colors_hf',
-
-           'print_result']
+__all__ = ["get_index_colordict", "valuedict_to_colordict", "compare_initial_current", "get_force_mags", "get_force_colors_uv", "get_force_colors_hf", "print_result"]
 
 
 # ******************************************************************************
@@ -34,52 +22,58 @@ __all__ = ['get_index_colordict',
 # ******************************************************************************
 
 
-def get_index_colordict(key_list, color_scheme=i_to_rgb):
+def get_index_colordict(
+    key_list: Sequence[Hashable],
+    color_scheme: Callable[[float], tuple[int, int, int]] | None = None,
+) -> dict[Hashable, tuple[int, int, int]]:
     """Convert a list of keys to a dictionary of key-color pairs based on a color gradient scheme.
 
     Parameters
     ----------
-    key_list : list
+    key_list
         List of keys.
     color_scheme
-        Desired color gradient scheme (i.e. i_to_rgb, i_to_red, i_to_blue, etc.)
+        A function that maps a float between 0 and 1 to an RGB tuple (0-255).
+        Default is `Color.from_i(value).rgb255` (blue to red).
 
     Returns
     -------
-    c_dict : dict
+    dict[Hashable, tuple[int, int, int]]
         Dictionary of key-color pairs, from lowest to highest based on a color gradient scheme.
 
     """
     c_dict = {}
 
     if key_list:
-
         for index, key in enumerate(key_list):
-
             if len(key_list) == 1:
                 value = 1
             else:
                 value = float(index) / (len(key_list) - 1)
 
-            color = color_scheme(value)
+            color = color_scheme(value) if color_scheme else Color.from_i(max(0.0, min(1.0, value))).rgb255
             c_dict[key] = color
 
     return c_dict
 
 
-def valuedict_to_colordict(value_dict, color_scheme=i_to_rgb):
+def valuedict_to_colordict(
+    value_dict: dict[Hashable, float],
+    color_scheme: Callable[[float], tuple[int, int, int]] | None = None,
+) -> dict[Hashable, tuple[int, int, int]]:
     """Convert a dictionary of key-value pairs to a dictionary of key-color pairs.
 
     Parameters
     ----------
-    value_dict : dict
+    value_dict
         Dictionary of key-value pairs.
     color_scheme
-        Desired color gradient scheme (i.e. i_to_rgb, i_to_red, i_to_blue, etc.)
+        A function that maps a float between 0 and 1 to an RGB tuple (0-255).
+        Default is `Color.from_i(value).rgb255` (blue to red).
 
     Returns
     -------
-    c_dict : dict
+    dict[Hashable, tuple[int, int, int]]
         Dictionary of key-color pairs, from lowest to highest based on a color gradient scheme.
 
     """
@@ -89,35 +83,49 @@ def valuedict_to_colordict(value_dict, color_scheme=i_to_rgb):
     ub = max(value_dict.values())
 
     for key in value_dict:
-
         value = (value_dict[key] - lb) / (ub - lb)
-        color = color_scheme(value)
+        color = color_scheme(value) if color_scheme else Color.from_i(max(0.0, min(1.0, value))).rgb255
         c_dict[key] = color
 
     return c_dict
 
 
-def compare_initial_current(current_value_dict,
-                            initial_value_dict,
-                            color_scheme=i_to_rgb):
-    """
+def compare_initial_current(
+    current_value_dict: dict[Hashable, float],
+    initial_value_dict: dict[Hashable, float],
+    color_scheme: Callable[[float], tuple[int, int, int]] | None = None,
+) -> dict[Hashable, tuple[int, int, int]]:
+    """Convert the ratios of current to initial values to a dictionary of key-color pairs.
+
+    Parameters
+    ----------
+    current_value_dict
+        Dictionary of key-value pairs of the current values.
+    initial_value_dict
+        Dictionary of key-value pairs of the initial values.
+    color_scheme
+        A function that maps a float to an RGB tuple (0-255).
+        Default is `Color.from_i(value).rgb255` (blue to red).
+
+    Returns
+    -------
+    dict[Hashable, tuple[int, int, int]]
+        Dictionary of key-color pairs, for the keys with a current value larger than 0.01.
 
     """
     color_dict = {}
 
     for key in current_value_dict:
-
         current = current_value_dict[key]
         initial = initial_value_dict[key]
 
         if current > 0.01:
-
             if initial < 0.01:
                 value = 0
             else:
                 value = current / initial
 
-            color_dict[key] = color_scheme(value)
+            color_dict[key] = color_scheme(value) if color_scheme else Color.from_i(max(0.0, min(1.0, value))).rgb255
 
     return color_dict
 
@@ -144,7 +152,7 @@ def get_force_mags(volmesh, network):
 
     for u, v in network.edges():
         hfkey = uv_hf_dict[(u, v)]
-        edge_vector = network.edge_vector(u, v)
+        edge_vector = network.edge_vector((u, v))
         face_normal = volmesh.halfface_normal(hfkey)
         face_area = volmesh.halfface_area(hfkey)
         dot = dot_vectors(face_normal, edge_vector)
@@ -155,17 +163,19 @@ def get_force_mags(volmesh, network):
         if dot > 0:
             factor = 1
 
-        force = face_area * factor * volmesh.attributes['convention']
+        force = face_area * factor * volmesh.attributes["convention"]
 
         mags[(u, v)] = force
 
     return mags
 
 
-def get_force_colors_uv(volmesh,
-                        network,
-                        gradient=False,
-                        tol=0.001):
+def get_force_colors_uv(
+    volmesh: VolMesh,
+    network: Graph,
+    gradient: bool = False,
+    tol: float = 0.001,
+) -> dict[tuple[int, int], tuple[int, int, int]]:
     """Returns a dictionary of (u,v)-color pairs.
     Blue means compression, and red means tension.
     """
@@ -184,7 +194,8 @@ def get_force_colors_uv(volmesh,
                 min_c = abs(c_forces[-1])
                 max_c = abs(c_forces[0])
                 if min_c != max_c:
-                    color = i_to_blue((abs(force) - min_c) / (max_c - min_c))
+                    i = max(0.0, min(1.0, (abs(force) - min_c) / (max_c - min_c)))
+                    color = Color(1 - i, 1 - i, 1.0).rgb255
 
         if force > 0:  # if tension
             color = (255, 0, 0)
@@ -192,7 +203,8 @@ def get_force_colors_uv(volmesh,
                 min_t = t_forces[0]
                 max_t = t_forces[-1]
                 if min_t != max_t:
-                    color = i_to_red((force - min_t) / (max_t - min_t))
+                    i = max(0.0, min(1.0, (force - min_t) / (max_t - min_t)))
+                    color = Color(1.0, 1 - i, 1 - i).rgb255
 
         if abs(force) < tol:  # if close to zero
             color = (255, 255, 255)
@@ -202,19 +214,18 @@ def get_force_colors_uv(volmesh,
     return c_dict
 
 
-def get_force_colors_hf(volmesh,
-                        network,
-                        uv_c_dict=None,
-                        gradient=False,
-                        boundary=False,
-                        tol=0.001):
-    """Returns a dictionary of hfkey-color pairs.
-    """
+def get_force_colors_hf(
+    volmesh: VolMesh,
+    network: Graph,
+    uv_c_dict: dict[tuple[int, int], tuple[int, int, int]] | None = None,
+    gradient: bool = False,
+    boundary: bool = False,
+    tol: float = 0.001,
+) -> dict[int, tuple[int, int, int]]:
+    """Returns a dictionary of hfkey-color pairs."""
     uv_hf_dict = pair_uv_to_hf(network, volmesh)
 
-    uv_c_dict = uv_c_dict or get_force_colors_uv(volmesh,
-                                                 network,
-                                                 gradient=gradient)
+    uv_c_dict = uv_c_dict or get_force_colors_uv(volmesh, network, gradient=gradient)
 
     # interior halffaces -------------------------------------------------------
     hf_c_dict = {}
@@ -229,8 +240,7 @@ def get_force_colors_hf(volmesh,
     if boundary:
         b_hfkeys = volmesh.halffaces_on_boundaries()
         b_hf_areas = {hfkey: volmesh.halfface_area(hfkey) for hfkey in b_hfkeys}
-        b_hf_c_dict = valuedict_to_colordict(b_hf_areas,
-                                             color_scheme=i_to_green)
+        b_hf_c_dict = valuedict_to_colordict(b_hf_areas, color_scheme=lambda i: Color(1 - max(0.0, min(1.0, i)), 1.0, 1 - max(0.0, min(1.0, i))).rgb255)
         for hfkey in b_hfkeys:
             hf_color = (0, 255, 0)
 
@@ -267,13 +277,13 @@ def print_result(name, k, deviation):
     """
     name = str(name)
 
-    print('===================================================================')
-    print('')
-    print(name, 'ended after', k, 'iterations.')
-    print('')
-    print('Max deviation :', deviation)
-    print('')
-    print('===================================================================')
+    print("===================================================================")
+    print("")
+    print(name, "ended after", k, "iterations.")
+    print("")
+    print("Max deviation :", deviation)
+    print("")
+    print("===================================================================")
 
 
 # ******************************************************************************
@@ -287,5 +297,5 @@ def print_result(name, k, deviation):
 # ******************************************************************************
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass
