@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added `compas_3gs.algorithms.truss_equilibrium` and `EquilibriumResult`: member forces and support reactions of a pin-jointed truss from equilibrium.
 * Added `compas_3gs.algorithms.cell_from_forces`: the force polyhedron of a node from the forces on it.
 * Added `compas_3gs.model.GSModel`: a form diagram with supports and forces, its equilibrium (`solve`) and the force polyhedron of every node (`derive_force_diagram`), built from member lines (`from_lines`) or from a polyhedral force diagram (`from_force_diagram`).
+* Added `compas_3gs.viewer.GSViewer`, a compas_viewer `Viewer` that draws a `GSModel` in groups: members in compression and tension with their forces, support glyphs, loads, reactions and the force diagram. The module needs compas_viewer.
+* Added examples of `GSModel` and `GSViewer` in `examples/model/`.
 * Added tests for every module in `tests/compas_3gs/`, mirroring `src/`, with JSON round trips of the data structures, and `tests/test_examples.py`, which runs every example (marked `gui`).
 
 ### Changed
