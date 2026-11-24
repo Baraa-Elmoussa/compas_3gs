@@ -4,11 +4,14 @@ from __future__ import division
 
 from compas.datastructures import Mesh
 
+from compas.geometry import Vector
 from compas.geometry import subtract_vectors
 from compas.geometry import normalize_vector
 from compas.geometry import normal_polygon
 from compas.geometry import length_vector
 from compas.geometry import cross_vectors
+
+from compas.tolerance import TOL
 
 
 __all__ = ['Mesh3gs']
@@ -65,7 +68,6 @@ class Mesh3gs(Mesh):
         float
             The length of the area-weighted normal of the face.
 
-
         """
         return length_vector(normal_polygon(self.face_coordinates(fkey), unitized=False))
 
@@ -81,24 +83,18 @@ class Mesh3gs(Mesh):
 
         Returns
         -------
-        list of float
-            The normal of the face.
-
-        Notes
-        -----
-        Equal to :meth:`compas.datastructures.Mesh.face_normal`, except for faces with a zero vector area
-        (for example a bowtie). There the normal falls back to the cross product of the first two edges,
-        because ``cell_planarise`` uses the face normal as the projection plane and a zero normal
-        makes that plane degenerate.
+        :class:`compas.geometry.Vector`
+            The normal of the face. For a face with a zero vector area, the unitized cross product
+            of its first two edges, which is always a unit vector.
 
         """
         points = self.face_coordinates(fkey)
         normal = normal_polygon(points, unitized=unitized)
-        if length_vector(normal) == 0:
+        if TOL.is_zero(length_vector(normal)):
             uv = subtract_vectors(points[1], points[0])
             vw = subtract_vectors(points[2], points[1])
             normal = normalize_vector(cross_vectors(uv, vw))
-        return list(normal)
+        return Vector(*normal)
 
 
 # ******************************************************************************
