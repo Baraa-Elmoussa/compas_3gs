@@ -1,0 +1,184 @@
+site_name: compas_3gs
+site_url: https://blockresearchgroup.github.io/compas_3gs/
+
+repo_name: BlockResearchGroup/compas_3gs
+repo_url: https://github.com/BlockResearchGroup/compas_3gs/
+
+copyright: Copyright &copy; 2018 Block Research Group - ETH Zurich
+
+extra:
+  homepage: https://blockresearchgroup.github.io/compas_3gs/
+  version:
+    provider: mike
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+  logo: assets/logos/compas_icon_white.png
+  favicon: public/favicon.ico
+  features:
+    - content.code.copy
+    - content.footnote.tooltips
+    - navigation.footer
+    - navigation.indexes
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - toc.follow
+
+markdown_extensions:
+  - abbr
+  - attr_list
+  - admonition
+  - footnotes
+  - md_in_html
+  - pymdownx.blocks.caption
+  - pymdownx.caret
+  - pymdownx.tilde
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.superfences
+  - toc:
+      permalink: "¤"
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [src] # search packages in the src folder
+          inventories:
+            - https://docs.python.org/3/objects.inv
+            - https://compas.dev/compas/latest/objects.inv
+          options:
+            allow_inspection: true
+            backlinks: tree
+            docstring_options:
+              ignore_init_summary: true
+              trim_doctest_flags: true
+            docstring_style: numpy
+            docstring_section_style: table
+            filters: ["!^_"]
+            group_by_category: true
+            heading_level: 1
+            inherited_members: false
+            line_length: 88
+            merge_init_into_class: true
+            modernize_annotations: true
+            parameter_headings: false
+            preload_modules: [mkdocstrings, compas]
+            relative_crossrefs: true
+            scoped_crossrefs: true
+            separate_signature: true
+            show_bases: false
+            show_category_heading: true
+            show_docstring_attributes: true
+            show_docstring_functions: true
+            show_docstring_modules: false
+            show_if_no_docstring: false
+            show_root_heading: true
+            show_root_full_path: true
+            show_signature: true
+            show_signature_annotations: true
+            show_source: false
+            show_submodules: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            signature_crossrefs: true
+            summary:
+              modules: false
+            unwrap_annotated: true
+
+nav:
+  - compas_3gs: index.md
+  - Introduction: 00_introduction.md
+  - Getting started: 01_getting_started.md
+  - Overview: 02_overview.md
+  - Theoretical background:
+      - 03_theoretical_background.md
+      - Graphic Statics: overview/00_graphic_statics.md
+      - Motivation: overview/01_motivation.md
+      - Design workflow: overview/02_design_workflow.md
+      - Implementation: overview/03_implementation.md
+      - Nomenclature: overview/04_nomenclature.md
+  - User manual:
+      - 04_user_manual.md
+      - Polyhedral cell:
+          - user_manual/00_polyhedral_cell.md
+          - Datastructure: user_manual/00_polyhedral_cell/00_00_datastructure.md
+          - Interpreting diagrams: user_manual/00_polyhedral_cell/00_01_interpretation.md
+          - Constrained manipulation: user_manual/00_polyhedral_cell/00_10_cell_pull_face.md
+          - Arearisation: user_manual/00_polyhedral_cell/00_11_cell_arearise_face.md
+          - Constructor: user_manual/00_polyhedral_cell/00_20_cell_constructor.md
+      - Multi-cell polyhedron:
+          - user_manual/01_multi-cell_polyhedron.md
+          - Datastructure: user_manual/01_multi-cell_polyhedron/01_00_datastructure.md
+          - Interpreting diagrams: user_manual/01_multi-cell_polyhedron/01_01_interpretation.md
+          - Constructor: user_manual/01_multi-cell_polyhedron/01_10_constructor.md
+          - Duality: user_manual/01_multi-cell_polyhedron/01_20_duality.md
+          - Reciprocation: user_manual/01_multi-cell_polyhedron/01_30_reciprocation.md
+          - Planarisation: user_manual/01_multi-cell_polyhedron/01_40_planarisation.md
+          - Arearisation: user_manual/01_multi-cell_polyhedron/01_50_arearisation.md
+          - Modification: user_manual/01_multi-cell_polyhedron/01_60_modification.md
+          - Transformation: user_manual/01_multi-cell_polyhedron/01_61_transformation.md
+          - Visualisation: user_manual/01_multi-cell_polyhedron/01_70_visualisation.md
+          - Unified diagram: user_manual/01_multi-cell_polyhedron/01_80_unified_diagram.md
+      - Cell network:
+          - user_manual/02_cell_network.md
+          - Datastructure: user_manual/02_cell_network/02_00_datastructure.md
+          - Constructor: user_manual/02_cell_network/02_10_cell_network_constructor.md
+      - Materialisation:
+          - user_manual/03_materialisation.md
+          - Background: user_manual/03_materialisation/03_00_background.md
+          - MycoTree node: user_manual/03_materialisation/03_10_mycotree_node.md
+  - API Reference:
+      - 05_api_reference.md
+      - compas_3gs.algorithms: api/compas_3gs.algorithms.md
+      - compas_3gs.datastructures: api/compas_3gs.datastructures.md
+      - compas_3gs.diagrams: api/compas_3gs.diagrams.md
+      - compas_3gs.operations: api/compas_3gs.operations.md
+      - compas_3gs.utilities: api/compas_3gs.utilities.md
+  - License: 06_license.md
+  - Citing: 07_citing.md
+  - Publications:
+      - 08_publications.md
+      - compas_3gs: publications/00_compas_3gs.md
+      - 3D graphic statics: publications/10_3gs.md
+      - Contributions: publications/20_contributions.md
+  - How to contribute: 09_how_to_contribute.md

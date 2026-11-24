@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * Updated workflow.
+* Changed the documentation from Sphinx to MkDocs (Material and mkdocstrings), with the pages converted to Markdown unchanged and an API page per subpackage.
 * Changed the requirements to compas 2.15 (`compas >=2.15, <3`) and Python 3.12.
 * Changed `Mesh3gs`, `Cell` and `EGI` to compas 2 `Mesh`, `Network3gs`, `FormNetwork` and `CellNetwork` to compas 2 `Graph`, and `VolMesh3gs` and `ForceVolMesh` to compas 2 `VolMesh`, all with constructors of the form `__init__(self, *args, name=..., **kwargs)`.
 * Changed `Mesh3gs.face_area` to the vector area, and `Mesh3gs.face_normal` to return a `Vector`, with a fallback for faces whose normal is zero.
