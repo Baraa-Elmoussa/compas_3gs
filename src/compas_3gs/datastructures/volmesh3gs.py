@@ -1,4 +1,7 @@
 
+from collections.abc import Sequence
+from typing import Any
+
 from compas.datastructures import VolMesh
 
 from compas.geometry import centroid_points
@@ -14,123 +17,34 @@ class VolMesh3gs(VolMesh):
 
     """
 
-    def __init__(self):
-        super(VolMesh3gs, self).__init__()
+    def __init__(self, *args: Any, name: str = "VolMesh3gs", **kwargs: Any) -> None:
+        super().__init__(*args, name=name, **kwargs)
         self.primal = None
-        self.scale = 1.0
+        self.attributes.update({
+            'scale': 1.0,
+        })
         self.default_face_attributes.update({
             '_a': 0.0,
         })
 
     # --------------------------------------------------------------------------
-    #   deleting
-    # --------------------------------------------------------------------------
-
-    def cell_vertex_delete(self, vkey):
-        '''This removes the vertex, and everything that is attached to the vertex EXCEPT the cell itself.
-        '''
-
-        if len(self.cell) > 1:
-            raise ValueError('This is a multi-cell volmesh.')
-        nbr_vkeys = self.vertex_neighbours(vkey)
-        nbr_ckeys = self.vertex_cells(vkey)
-
-        # delete cell info -----------------------------------------------------
-        for ckey in nbr_ckeys:
-            del self.cell[ckey][vkey]
-            for nbr_vkey in nbr_vkeys:
-                del self.cell[ckey][nbr_vkey][vkey]
-
-        # delete halffaces -----------------------------------------------------
-        halffaces = self.vertex_halffaces(vkey)
-        for hfkey in halffaces:
-            del self.halfface[hfkey]
-
-        # delete planes --------------------------------------------------------
-        del self.plane[vkey]
-        for u in self.plane:
-            for v in self.plane[u].keys():
-                if v == vkey:
-                    del self.plane[u][v]
-                else:
-                    for w in self.plane[u][v].keys():
-                        if w == vkey:
-                            del self.plane[u][v][w]
-
-        # delete edges ---------------------------------------------------------
-        del self.edge[vkey]
-        for u in self.edge:
-            if vkey in self.edge[u]:
-                del self.edge[u][vkey]
-
-        # delete the vertex itself ---------------------------------------------
-        del self.vertex[vkey]
-
-    def delete_halfface(self, hfkey):
-        vertices = self.halfface_vertices(hfkey)
-        for i in range(-2, len(vertices) - 2):
-            u = vertices[i]
-            v = vertices[i + 1]
-            w = vertices[i + 2]
-            del self.plane[u][v][w]
-            if self.plane[w][v][u] is None:
-                del self.plane[w][v][u]
-        del self.halfface[hfkey]
-
-    def delete_cell(self, ckey):
-
-        hfkeys = self.cell_halffaces(ckey)
-
-        for hfkey in hfkeys:
-            for halfedge in self.halfface_halfedges(hfkey):
-                u, v = halfedge
-                # delete edges
-                if v in self.edge[u]:
-                    if len(self.edge_cells(u, v)) == 1:
-                        del self.edge[u][v]
-                if u in self.edge[v]:
-                    if len(self.edge_cells(v, u)) == 1:
-                        del self.edge[v][u]
-
-        # delete vertices
-        for vkey in self.cell_vertices(ckey):
-            if len(self.vertex_cells(vkey)) == 1:
-                del self.vertex[vkey]
-
-        # delete halfface and planes
-        for hfkey in hfkeys:
-            vertices = self.halfface_vertices(hfkey)
-            for i in range(-2, len(vertices) - 2):
-                u = vertices[i]
-                v = vertices[i + 1]
-                w = vertices[i + 2]
-                # delete planes
-                self.plane[u][v][w] = None
-                if self.plane[w][v][u] is None:
-                    del self.plane[u][v][w]
-                    del self.plane[w][v][u]
-            del self.halfface[hfkey]
-
-        # delete cell
-        del self.cell[ckey]
-
-    # --------------------------------------------------------------------------
     #   vertices
     # --------------------------------------------------------------------------
 
-    def vertex_normal(self, vertex):
-        """Return the normal vector at the vertex as the weighted average of the
-        normals of the neighboring faces.
+    def vertex_normal(self, vertex: int) -> list[float] | None:
+        """Return the normal vector at a boundary vertex as the normalised average of the
+        area-weighted normals of its boundary halffaces.
 
         Parameters
         ----------
-        key : int
+        vertex
             The identifier of the vertex.
 
         Returns
         -------
-        list
-            The components of the normal vector.
+        list[float] | None
+            The components of the normal vector, or `None` if the vertex is not on the boundary.
+
         """
         if not self.is_vertex_on_boundary(vertex):
             return
@@ -143,143 +57,56 @@ class VolMesh3gs(VolMesh):
         vectors = [self.face_normal(halfface, False) for halfface in halffaces if halfface is not None]
         return normalize_vector(centroid_points(vectors))
 
-    def vertex_update_xyz(self, vertex, new_xyz, constrained=True):
+    def vertex_update_xyz(self, vertex: int, new_xyz: Sequence[float], constrained: bool = True) -> None:
+        """Update the coordinates of a vertex, respecting its per-axis fixity.
 
-        if constrained:
-            # X
-            if self.vertex_attribute(vertex, 'x_fix') is False:
-                self.vertex_attribute(vertex, 'x', new_xyz[0])
-            # Y
-            if self.vertex_attribute(vertex, 'y_fix') is False:
-                self.vertex_attribute(vertex, 'y', new_xyz[1])
-            # Z
-            if self.vertex_attribute(vertex, 'z_fix') is False:
-                self.vertex_attribute(vertex, 'z', new_xyz[2])
-        else:
-            self.vertex_attribute(vertex, 'x', new_xyz[0])
-            self.vertex_attribute(vertex, 'y', new_xyz[1])
-            self.vertex_attribute(vertex, 'z', new_xyz[2])
+        Parameters
+        ----------
+        vertex
+            The identifier of the vertex.
+        new_xyz
+            The new XYZ coordinates.
+        constrained
+            If True, an axis is only updated if the vertex attribute `x_fix`, `y_fix` or `z_fix`
+            is not True (a missing attribute counts as False).
+            If False, all three coordinates are updated.
 
-    # --------------------------------------------------------------------------
-    # halfface
-    # --------------------------------------------------------------------------
-
-    def boundary_halfface_manifold_neighbors(self, halfface):
-        if not self.is_halfface_on_boundary(halfface):
-            return
-
-        nbrs = []
-        cell = self.halfface_cell(halfface)
-        for u, v in self.halfface_halfedges(halfface):
-            nbr_halfface = self._cell[cell][v][u]
-            w = self.halfface_vertex_ancestor(nbr_halfface, v)
-            nbr_cell = self._plane[u][v][w]
-            if nbr_cell is not None:
-                nbr = self._cell[nbr_cell][v][u]
-                nbrs.append(nbr)
-        return nbrs
-
-        # nbrs = []
-        # cell = self.halfface_cell(halfface)
-        # for halfedge in self.halfface_halfedges(halfface):
-        #     print('halfedge', halfedge)
-        #     print('edge halffaces', self.edge_halffaces(halfedge))
-
-        #     for face in self.edge_halffaces(halfedge):
-        #         print('face -------------------------', face)
-        #         if self.is_halfface_on_boundary(face):
-        #             print('cell', cell)
-        #             print('nbr_ckey', self.halfface_cell(face))
-
-        #             if self.halfface_cell(face) is not cell:
-        #                 print('add face')
-        #                 nbrs.append(face)
-        # print('nbrs', nbrs)
-        # return nbrs
-
-    def boundary_halfface_manifold_neighborhood(self, hfkey, ring=1):
-        nbrs = set(self.boundary_halfface_manifold_neighbors(hfkey))
-        i = 1
-        while True:
-            if i == ring:
-                break
-            temp = []
-            for nbr_hfkey in nbrs:
-                temp += self.boundary_halfface_manifold_neighbors(hfkey)
-            nbrs.update(temp)
-            i += 1
-        return list(nbrs - set([hfkey]))
+        """
+        for axis, value in zip("xyz", new_xyz):
+            if constrained and self.vertex_attribute(vertex, axis + "_fix"):
+                continue
+            self.vertex_attribute(vertex, axis, value)
 
     # --------------------------------------------------------------------------
     # cell
     # --------------------------------------------------------------------------
 
-    def cell_pair_halffaces(self, cell_1, cell_2):
-        """Given 2 ckeys, returns the interfacing halffaces, respectively.
+    def cell_pair_halffaces(self, cell_1: int, cell_2: int) -> tuple[int, int]:
+        """Find the pair of halffaces through which two cells touch.
+
         Parameters
         ----------
-        ckey_1 : hashable
+        cell_1
             Identifier of the cell 1.
-        ckey_2 : hashable
+        cell_2
             Identifier of the cell 2.
+
         Returns
         -------
-        hfkey_1
-            The identifier of the halfface belonging to cell 1 .
-        hfkey_2
-            The identifier of the halfface belonging to cell 2.
+        tuple[int, int]
+            The halfface of cell 1 and the opposite halfface, which belongs to cell 2.
+
+        Raises
+        ------
+        KeyError
+            If the two cells do not share a face.
+
         """
         for halfface in self.cell_faces(cell_1):
-            u, v, w = self.halfface_vertices(halfface)[0:3]
-            nbr = self._plane[w][v][u]
-
-            if nbr == cell_2:
+            if self.halfface_opposite_cell(halfface) == cell_2:
                 return halfface, self.halfface_opposite_halfface(halfface)
 
-        raise KeyError
-
-    # --------------------------------------------------------------------------
-    # drawing
-    # --------------------------------------------------------------------------
-
-    # def draw(self, **kwattr):
-    #     artist = VolMeshArtist(self, layer=self.layer)
-    #     artist.clear_by_name()
-    #     artist.draw_faces(**kwattr)
-    #     artist.draw_vertices(**kwattr)
-
-    # def clear(self, **kwattr):
-    #     artist = VolMeshArtist(self, layer=self.layer)
-    #     artist.clear_by_name()
-    #     artist.clear_layer()
-
-    # def draw_edges(self, **kwattr):
-    #     artist = VolMeshArtist(self, **kwattr)
-    #     artist.draw_edges(**kwattr)
-
-    # def draw_faces(self, **kwattr):
-    #     artist = VolMeshArtist(self, layer=self.layer)
-    #     artist.draw_faces(**kwattr)
-
-    # def clear_faces(self, **kwattr):
-    #     artist = VolMeshArtist(self, layer=self.layer)
-    #     artist.clear_faces(**kwattr)
-
-    # def draw_facelabels(self, **kwattr):
-    #     artist = VolMeshArtist(self, layer=self.layer)
-    #     artist.draw_facelabels(**kwattr)
-
-    # def draw_vertices(self, **kwattr):
-    #     artist = VolMeshArtist(self, layer=self.layer)
-    #     artist.draw_vertices(**kwattr)
-
-    # def draw_vertexlabels(self, **kwattr):
-    #     artist = VolMeshArtist(self, layer=self.layer)
-    #     artist.draw_vertexlabels(**kwattr)
-
-    # def draw_edgelabels(self, **kwattr):
-    #     artist = VolMeshArtist(self, layer=self.layer)
-    #     artist.draw_edgelabels(**kwattr)
+        raise KeyError((cell_1, cell_2))
 
 
 # ******************************************************************************

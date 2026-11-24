@@ -87,53 +87,6 @@ class FormNetwork(Network3gs):
 # ******************************************************************************
 # ******************************************************************************
 #
-#   polyheral form diagram - as volmesh
-#
-# ******************************************************************************
-# ******************************************************************************
-# ******************************************************************************
-
-
-# class FormVolMesh(VolMesh3gs):
-#     """A polyhedral form diagram, represented as a volmesh object.
-
-#     """
-
-#     __module__ = 'compas_3gs.diagrams'
-
-#     def __init__(self):
-#         super(FormVolMesh, self).__init__()
-#         self.dual = None
-
-#         a = {'scale': 1}
-
-#         va = {'x_fix': False,
-#               'y_fix': False,
-#               'z_fix': False,
-#               'is_fixed': False}
-
-#         ea = {'l_min': 1,
-#               'l_max': 20,
-#               'target_vector': None,
-#               'target_length': None}
-
-#         fa = {'a_max': 1000,
-#               'target_area': None,
-#               'target_normal': None}
-
-#         ca = {}
-
-#         self.attributes.update(a)
-#         self.default_vertex_attributes.update(va)
-#         self.default_edge_attributes.update(ea)
-#         self.default_face_attributes.update(fa)
-#         self.default_cell_attributes.update(ca)
-
-
-# ******************************************************************************
-# ******************************************************************************
-# ******************************************************************************
-#
 #   polyhedral force diagram
 #
 # ******************************************************************************
@@ -148,34 +101,34 @@ class ForceVolMesh(VolMesh3gs):
 
     __module__ = 'compas_3gs.diagrams'
 
-    def __init__(self):
-        super(ForceVolMesh, self).__init__()
+    def __init__(self, *args: Any, name: str = "ForceVolMesh", **kwargs: Any) -> None:
+        super().__init__(*args, name=name, **kwargs)
         self.primal = None
 
-        a = {'scale': 1,
-             'convention': -1}
-
-        va = {'x_fix': False,
-              'y_fix': False,
-              'z_fix': False,
-              'is_fixed': False}
-
-        ea = {'l_min': 1,
-              'l_max': 20,
-              'target_vector': None,
-              'target_length': None}
-
-        fa = {'target_area': None,
-              'target_normal': None,
-              '_a': 0.0}
-
-        ca = {'dir': None}
-
-        self.attributes.update(a)
-        self.default_vertex_attributes.update(va)
-        self.default_edge_attributes.update(ea)
-        self.default_face_attributes.update(fa)
-        self.default_cell_attributes.update(ca)
+        self.attributes.update({
+            'scale': 1,
+            'convention': -1,
+        })
+        self.default_vertex_attributes.update({
+            'x_fix': False,
+            'y_fix': False,
+            'z_fix': False,
+            'is_fixed': False,
+        })
+        self.default_edge_attributes.update({
+            'l_min': 1,
+            'l_max': 20,
+            'target_vector': None,
+            'target_length': None,
+        })
+        self.default_face_attributes.update({
+            'target_area': None,
+            'target_normal': None,
+            '_a': 0.0,
+        })
+        self.default_cell_attributes.update({
+            'dir': None,
+        })
 
 
 # ******************************************************************************
