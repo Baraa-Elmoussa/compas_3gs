@@ -8,6 +8,7 @@ from compas.geometry import distance_point_point
 from compas.geometry import dot_vectors
 from compas.geometry import project_point_plane
 from compas_3gs.datastructures import Mesh3gs
+from compas_3gs.datastructures import VolMesh3gs
 from compas_3gs.diagrams import Cell
 from compas_3gs.operations import cell_collapse_short_edge
 from compas_3gs.utilities import print_result
@@ -225,7 +226,7 @@ def cell_planarise(
 
 
 def volmesh_planarise(
-    volmesh: VolMesh,
+    volmesh: VolMesh3gs,
     kmax: int = 100,
     target_centers: dict[int, Sequence[float]] | None = None,
     target_normals: dict[int, Sequence[float]] | None = None,

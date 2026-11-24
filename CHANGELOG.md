@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added type hints and NumPy-style Markdown docstrings to the ported classes and functions.
 * Added `TODO.md` with the open design questions and the known compas 2.15.1 and compas_viewer 2.0.2 issues.
 * Added `pyproject.toml` and `tasks.py` with `compas_invocations2`.
+* Added tests for every module in `tests/compas_3gs/`, mirroring `src/`, with JSON round trips of the data structures, and `tests/test_examples.py`, which runs every example (marked `gui`).
 
 ### Changed
 
@@ -40,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Fixed `volmesh_planarise` targets keyed by the opposite halfface, which raised `KeyError` (normals, centres) or were ignored (areas).
 * Fixed `volmesh_vertex_merge`, which kept a repeated vertex where the first and last vertex of a face were merged.
 * Fixed `Network3gs.edge_avg_length`.
+* Fixed `resultant_vector`, which ignored `locations` and placed the resultant at the weighted centroid of the vectors themselves.
 
 ### Removed
 

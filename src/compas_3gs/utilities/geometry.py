@@ -67,21 +67,19 @@ def resultant_vector(vectors, locations):
 
     Examples
     --------
-    >>> resultant_vector({0 : [ 0.97 , 0.83 , 0.83 ],
-                          1 : [ 0.65 , 0.89 , 0.34 ],
-                          2 : [ 0.68 , 0.63 , 0.97 ]},
-                         {0 : [ 0.97 , 0.83 , 0.83 ],
-                          1 : [ 0.65 , 0.89 , 0.34 ],
-                          2 : [ 0.68 , 0.63 , 0.97 ]})
-    [2.3000000000000003, 2.35, 2.1399999999999997]
-    [0.78129727344020572, 0.78043477156745522, 0.7360930822393742],
+    >>> vectors = {0: [0.97, 0.83, 0.83], 1: [0.65, 0.89, 0.34], 2: [0.68, 0.63, 0.97]}
+    >>> resultant, location = resultant_vector(vectors, vectors)
+    >>> resultant
+    [2.3, 2.35, 2.14]
+    >>> location
+    [0.781, 0.780, 0.736]
 
     """
     points = []
     weights = []
 
     for vkey in vectors:
-        points.append(vectors[vkey])
+        points.append(locations[vkey])
         weights.append(length_vector(vectors[vkey]))
 
     resultant_xyz = centroid_points_weighted(points, weights)
