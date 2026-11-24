@@ -17,7 +17,6 @@ compas_3gs
 
 """
 
-from __future__ import print_function
 
 import os
 

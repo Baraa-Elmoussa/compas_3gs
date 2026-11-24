@@ -82,9 +82,6 @@ Unified Diagram
 
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from .arearisation import *  # noqa: F401 F403
 from .duality import *  # noqa: F401 F403

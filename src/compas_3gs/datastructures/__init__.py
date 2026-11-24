@@ -50,9 +50,6 @@ inherits compas mesh and adds these functions...
     VolMesh3gs
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from .mesh3gs import Mesh3gs
 from .network3gs import Network3gs

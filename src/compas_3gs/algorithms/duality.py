@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 from compas_3gs.datastructures import Network3gs as Network
 from compas_3gs.datastructures import VolMesh3gs as VolMesh
