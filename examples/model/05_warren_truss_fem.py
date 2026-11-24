@@ -231,29 +231,29 @@ deflected = viewer.scene.add_group(name="A, FEM: deflected shape (x{:.0f}) and m
 for u, v in form.edges():
     a = xyz[index[u]] + scale * displacements[3 * index[u] : 3 * index[u] + 3] + shift
     b = xyz[index[v]] + scale * displacements[3 * index[v] : 3 * index[v] + 3] + shift
-    color = Color.grey() if abs(fem[(u, v)]) < 1e-9 else Color.blue() if fem[(u, v)] > 0 else Color.red()
-    viewer.scene.add(Line(a, b), parent=deflected, linecolor=color, linewidth=1.5 + 6 * abs(fem[(u, v)]) / peak)
-
-shift = np.array([0.0, -6 * WIDTH, 0.0])
-group = viewer.scene.add_group(name="B, four bearings: the chosen state")
-members = {}
-for u, v in form.edges():
-    force = chosen[(u, v)]
+    force = fem[(u, v)]
     color = Color.grey() if abs(force) < 1e-9 else Color.blue() if force > 0 else Color.red()
-    members[(u, v)] = viewer.scene.add(Line(xyz[index[u]] + shift, xyz[index[v]] + shift), parent=group, linecolor=color, linewidth=1.5 + 6 * abs(force) / peak)
-for node in bearings:
-    viewer.add_support(xyz[index[node]] + shift, indeterminate.form.node_attribute(node, "support"), 0.05 * np.linalg.norm(xyz.max(axis=0) - xyz.min(axis=0)), parent=group)
-viewer.add_cells(indeterminate, offset=[1.5 * BAYS * BAY + 2.0, -6 * WIDTH, 0.0])
+    line = viewer.scene.add(Line(a, b), parent=deflected, linecolor=color, linewidth=1.5 + 6 * abs(force) / peak, name="{}-{}".format(u, v))
+    fx, fy, fz = force * form.edge_direction((u, v))
+    # the same info as the 3GS members (GSViewer.member_info), with the FEM force: select a member to see it
+    line.attributes["data"] = {
+        "type": "zero" if abs(force) < 1e-9 else "tension" if force > 0 else "compression",
+        "force": round(force, 3) + 0.0,
+        "fx": round(fx, 3) + 0.0,
+        "fy": round(fy, 3) + 0.0,
+        "fz": round(fz, 3) + 0.0,
+    }
+
+shift = [0.0, -6 * WIDTH, 0.0]
+drawing = viewer.add_form(indeterminate.form, labels=False, offset=shift)
+drawing["form"].name = "B, four bearings: the chosen state"
+drawing["reactions"].show = False  # the arrows keep the state they were drawn in, while the slider changes the reactions
+viewer.add_cells(indeterminate, offset=[1.5 * BAYS * BAY + 2.0, shift[1], 0.0])
 
 
 def pick(slider, value):
     indeterminate.solve(stiffness=stiffness["soft bracing"], reactions={(corner, "z"): value})
-    for edge, line in members.items():
-        force = indeterminate.form.edge_force(edge)
-        line.linecolor = Color.grey() if abs(force) < 1e-9 else Color.blue() if force > 0 else Color.red()
-        line.linewidth = 1.5 + 6 * abs(force) / peak
-        line.update(update_data=True)
-    viewer.renderer.update()
+    viewer.update_form(indeterminate.form, drawing)
 
 
 viewer.ui.sidedock.show = True

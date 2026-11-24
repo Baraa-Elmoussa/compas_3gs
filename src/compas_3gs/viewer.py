@@ -8,6 +8,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from compas_viewer import Viewer
+from compas_viewer.components import Treeform
 from compas_viewer.scene import Tag
 
 from compas.colors import Color
@@ -54,6 +55,16 @@ class GSViewer(Viewer):
     A support is drawn as a tetrahedron under the node, on two rollers if it restrains one direction,
     and on a line along the free direction if it restrains two.
 
+    Selecting a member, in the scene tree or in the view, shows its force in the info panel of the sidebar:
+    `type` (`"compression"`, `"tension"` or `"zero"`), `force` (the axial force, tension positive)
+    and `fx`, `fy`, `fz` (the force the member applies to its first node, as a vector).
+    The panel shows the attribute `data` of any selected scene object, so other objects can fill it too.
+
+    Attributes
+    ----------
+    info : Treeform
+        The info panel of the sidebar.
+
     Examples
     --------
     ```python
@@ -63,6 +74,27 @@ class GSViewer(Viewer):
     ```
 
     """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.info = Treeform()
+        self.ui.sidebar.add(self.info)
+        self.ui.sidebar.sceneform.action = self.show_info
+
+    def show_info(self, sceneform: Any, node: Any) -> None:
+        """Show the data of a selected scene object in the info panel.
+
+        This is the selection action of the scene tree; selecting an object in the view selects it in the tree as well.
+
+        Parameters
+        ----------
+        sceneform
+            The scene tree.
+        node
+            The selected scene object. Its attribute `data`, a dict of names and values, is shown.
+
+        """
+        self.info.update_from_dict(node.attributes.get("data") or {})
 
     def add_model(self, model: GSModel, labels: bool = True, offset: Sequence[float] | None = None) -> dict[str, Any]:
         """Add a model: its form diagram and its force diagram or force polyhedra.
@@ -93,8 +125,10 @@ class GSViewer(Viewer):
             groups.update(self.add_cells(model, offset))
         return groups
 
-    def add_form(self, form: FormNetwork, labels: bool = True) -> dict[str, Any]:
+    def add_form(self, form: FormNetwork, labels: bool = True, offset: Sequence[float] | None = None) -> dict[str, Any]:
         """Add a form diagram with its members, supports, loads and reactions.
+
+        Each member gets the info of the panel (see `GSViewer`) as its attribute `data`, and its edge as `edge`.
 
         Parameters
         ----------
@@ -102,6 +136,8 @@ class GSViewer(Viewer):
             The form diagram.
         labels
             Show the member forces as labels.
+        offset
+            The translation from the form diagram to the drawing. Default is none.
 
         Returns
         -------
@@ -109,6 +145,7 @@ class GSViewer(Viewer):
             The groups, by name: `"form"`, `"members"`, `"labels"`, `"supports"`, `"loads"` and `"reactions"`.
 
         """
+        offset = [0.0, 0.0, 0.0] if offset is None else list(offset)
         box = bounding_box([form.node_coordinates(node) for node in form.nodes()])
         size = 0.05 * distance_point_point(box[0], box[6]) or 1.0
 
@@ -122,16 +159,18 @@ class GSViewer(Viewer):
         forces = {edge: form.edge_force(edge) for edge in form.edges()}
         peak = max([abs(force) for force in forces.values()], default=0.0) or 1.0
         for (u, v), force in forces.items():
-            a, b = form.node_coordinates(u), form.node_coordinates(v)
+            a, b = add_vectors(form.node_coordinates(u), offset), add_vectors(form.node_coordinates(v), offset)
             color = ZERO if TOL.is_zero(force) else TENSION if force > 0 else COMPRESSION
-            self.scene.add(Line(a, b), parent=members, linecolor=color, linewidth=1.5 + 6 * abs(force) / peak, name="{}-{}".format(u, v))
+            member = self.scene.add(Line(a, b), parent=members, linecolor=color, linewidth=1.5 + 6 * abs(force) / peak, name="{}-{}".format(u, v))
+            member.attributes["edge"] = (u, v)
+            member.attributes["data"] = self.member_info(form, (u, v))
             if labels:
                 self.scene.add(Tag("{:+.2f}".format(force), centroid_points([a, b]), color=color, height=14), parent=texts)
 
         lengths = [form.node_load(node).length for node in form.nodes()] + [form.node_reaction(node).length for node in form.supports()]
         arrow = 4 * size / (max(lengths, default=0.0) or 1.0)  # the longest arrow is four glyph sizes long
         for node in form.nodes():
-            point = form.node_coordinates(node)
+            point = add_vectors(form.node_coordinates(node), offset)
             load = form.node_load(node)
             if not TOL.is_zero(load.length):
                 vector = Vector(*scale_vector(load, arrow))
@@ -144,6 +183,58 @@ class GSViewer(Viewer):
                     vector = Vector(*scale_vector(reaction, arrow))
                     self.scene.add(vector, parent=reactions, anchor=Point(*subtract_vectors(point, vector)), linecolor=REACTION, linewidth=2)
         return {"form": group, "members": members, "labels": texts, "supports": supports, "loads": loads, "reactions": reactions}
+
+    def member_info(self, form: FormNetwork, edge: tuple[int, int]) -> dict[str, str | float]:
+        """Return the info of a member for the info panel.
+
+        Parameters
+        ----------
+        form
+            The form diagram.
+        edge
+            The edge of the member.
+
+        Returns
+        -------
+        dict[str, str | float]
+            `type` (`"compression"`, `"tension"` or `"zero"`), `force` (the axial force, tension positive)
+            and `fx`, `fy`, `fz` (the force the member applies to its first node: the axial force along the edge direction).
+
+        """
+        force = form.edge_force(edge)
+        fx, fy, fz = scale_vector(form.edge_direction(edge), force)
+        return {
+            "type": "zero" if TOL.is_zero(force) else "tension" if force > 0 else "compression",
+            "force": round(force, 3) + 0.0,
+            "fx": round(fx, 3) + 0.0,
+            "fy": round(fy, 3) + 0.0,
+            "fz": round(fz, 3) + 0.0,
+        }
+
+    def update_form(self, form: FormNetwork, groups: dict[str, Any]) -> None:
+        """Show the current member forces of a form diagram drawn with `add_form`: the colour, width and info of each member.
+
+        Use it after the forces changed, for example after solving the model again. The labels, loads and reactions keep
+        the state in which `add_form` drew them.
+
+        Parameters
+        ----------
+        form
+            The form diagram.
+        groups
+            The groups that `add_form` returned for it.
+
+        """
+        peak = max([abs(form.edge_force(edge)) for edge in form.edges()], default=0.0) or 1.0
+        for member in groups["members"].children:
+            force = form.edge_force(member.attributes["edge"])
+            member.linecolor = ZERO if TOL.is_zero(force) else TENSION if force > 0 else COMPRESSION
+            member.linewidth = 1.5 + 6 * abs(force) / peak
+            member.attributes["data"] = self.member_info(form, member.attributes["edge"])
+            member.update(update_data=True)
+            if member.is_selected:
+                self.info.update_from_dict(member.attributes["data"])
+        self.renderer.update()
 
     def add_support(self, point: Sequence[float], dofs: str, size: float, parent: Any = None) -> None:
         """Add the glyph of a support: a tetrahedron under the point, along its main restrained direction.
