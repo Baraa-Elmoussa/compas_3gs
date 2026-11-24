@@ -4,7 +4,7 @@ from compas.geometry import add_vectors
 from compas.geometry import scale_vector
 from compas.geometry import subtract_vectors
 
-from compas.utilities import geometric_key
+from compas.tolerance import TOL
 
 
 __all__ = ['volmesh_ud',
@@ -102,7 +102,7 @@ def volmesh_ud(volmesh,
                 xyz = volmesh.vertex_coordinates(vertex)
                 arm = scale_vector(subtract_vectors(xyz, base_xyz[cell]), scale)
                 scaled_xyz = add_vectors(base_xyz[cell], arm)
-                gkey = geometric_key(scaled_xyz)
+                gkey = TOL.geometric_key(scaled_xyz)
                 gkey_xyz[gkey] = scaled_xyz
                 new_face.append(gkey)
                 scaled_face_xyz.append(scaled_xyz)
