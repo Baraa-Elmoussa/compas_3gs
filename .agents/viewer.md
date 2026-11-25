@@ -12,7 +12,7 @@ viewer.show()
 | Call | |
 |---|---|
 | `add_model(model, labels=True, offset=None)` | everything; `offset` places the force diagram (default: beside the form along x) |
-| `add_form(form, labels=True, offset=None)` | groups `form/members, labels, supports, loads, reactions`; members red in compression, blue in tension, width by force |
+| `add_form(form, labels=True, offset=None)` | groups `form/members, labels, supports, loads, reactions`; members blue in compression, red in tension, width by force |
 | `update_form(form, groups)` | after the forces change (for example in a slider callback): recolours and resizes the members and refreshes their info; labels, loads and reactions keep their drawn state |
 | `add_cells(model, offset)` | the force polyhedron of every node of `model.cells`, scaled together, faces coloured like their members (load black, reaction green) |
 | `add_force_diagram(force, form, offset)` | a `ForceVolMesh`, one mesh per cell |

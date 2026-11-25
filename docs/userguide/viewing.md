@@ -17,7 +17,7 @@ viewer.show()
 Every part goes into a group of the scene tree, so it can be shown or hidden on its own:
 
 - `form`
-    - `members`: red in compression, blue in tension, grey without force, thicker with a larger force;
+    - `members`: blue in compression, red in tension, grey without force, thicker with a larger force;
     - `labels`: the member forces (`add_model(model, labels=False)` leaves them out);
     - `supports`: a tetrahedron under each support, on two rollers if it restrains one direction and on a
       line along the free direction if it restrains two;

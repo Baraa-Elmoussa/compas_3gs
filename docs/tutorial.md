@@ -108,7 +108,7 @@ viewer.show()
 
 ![The space truss and its force polyhedra](assets/images/examples/model_02_space_truss.png)
 /// caption
-Members in compression red, in tension blue, thicker with a larger force; a glyph per support; the
+Members in compression blue, in tension red, thicker with a larger force; a glyph per support; the
 force polyhedra of the nodes beside the truss.
 ///
 

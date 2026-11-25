@@ -57,7 +57,7 @@ def test_add_model_form_first(viewer, tripod):
     assert len(groups["cells"].children) == 1  # the feet have no force polyhedron
     for member in groups["members"].children:
         assert isinstance(member, LineObject)
-        assert member.linecolor == Color.red()  # all legs are in compression
+        assert member.linecolor == Color.blue()  # all legs are in compression
 
 
 @pytest.mark.gui
@@ -127,7 +127,7 @@ def test_update_form_after_solving_again(viewer, tripod):
 
     for member in groups["members"].children:
         assert member.attributes["data"]["type"] == "tension"
-        assert member.linecolor == Color.blue()
+        assert member.linecolor == Color.red()
 
 
 @pytest.mark.gui

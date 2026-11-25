@@ -101,7 +101,7 @@ each, a leg and a reaction, so only the apex has a polyhedron; its faces match t
 
 ![A tripod and the force polyhedron of its apex](assets/images/examples/model_01_tripod.png)
 /// caption
-The tripod in compression (red) on its pinned supports, the load (black) and the reactions (green);
+The tripod in compression (blue) on its pinned supports, the load (black) and the reactions (green);
 beside it the force polyhedron of the apex.
 ///
 

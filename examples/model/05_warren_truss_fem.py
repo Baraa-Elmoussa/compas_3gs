@@ -221,7 +221,7 @@ for u, v in form.edges():
     a = xyz[index[u]] + scale * displacements[3 * index[u] : 3 * index[u] + 3] + shift
     b = xyz[index[v]] + scale * displacements[3 * index[v] : 3 * index[v] + 3] + shift
     force = fem[(u, v)]
-    color = Color.grey() if abs(force) < 1e-9 else Color.blue() if force > 0 else Color.red()
+    color = Color.grey() if abs(force) < 1e-9 else Color.red() if force > 0 else Color.blue()
     line = viewer.scene.add(Line(a, b), parent=deflected, linecolor=color, linewidth=1.5 + 6 * abs(force) / peak, name="{}-{}".format(u, v))
     fx, fy, fz = force * form.edge_direction((u, v))
     # the same info as the 3GS members (GSViewer.member_info), with the FEM force: select a member to see it

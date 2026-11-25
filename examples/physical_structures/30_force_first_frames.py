@@ -105,7 +105,7 @@ for name, force, offset in cases:
     peak = max(abs(n) for n in forces.values())
     for (u, v), n in forces.items():
         a, b = add_vectors(form.node_coordinates(u), offset), add_vectors(form.node_coordinates(v), offset)
-        color = Color.blue() if n > 0 else Color.red()
+        color = Color.red() if n > 0 else Color.blue()
         viewer.scene.add(Line(a, b), linecolor=color, linewidth=1 + 6 * abs(n) / peak)
         viewer.scene.add(Tag("{:+.2f}".format(n), centroid_points([a, b]), color=color, height=14))
     for node, load in loads.items():
