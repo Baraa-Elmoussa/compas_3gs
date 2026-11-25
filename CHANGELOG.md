@@ -21,13 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added `compas_3gs.model.GSModel`: a form diagram with supports and forces, its equilibrium (`solve`, with optional member stiffness and prescribed forces and reactions, and `self_stresses`) and the force polyhedron of every node where the construction reaches the forces (`derive_force_diagram`, `check`), built from member lines (`from_lines`) or from a polyhedral force diagram (`from_force_diagram`).
 * Added `compas_3gs.viewer.GSViewer`, a compas_viewer `Viewer` that draws a `GSModel` in groups: members in compression and tension with their forces, support glyphs, loads, reactions and the force diagram. Selecting a member shows its type (compression or tension), signed force and force components in an info panel of the sidebar; `update_form` redraws the members after the forces change. The module needs compas_viewer.
 * Added examples of `GSModel` and `GSViewer` in `examples/model/`, including a 3D Warren truss solved with 3GS and with linear finite elements, on three bearings and, statically indeterminate, on four, where the state in equilibrium is picked in the input or with a slider (`05_warren_truss_fem.py`), a lattice transmission tower (`06_transmission_tower.py`), a Schwedler dome against membrane theory (`07_schwedler_dome.py`) and a prestressed tensegrity prism (`08_tensegrity_prism.py`).
-* Added an Examples section to the documentation: the API in brief, and one page per example with its screenshot and code.
+* Added to the documentation: an Examples section (a card per example, and one page per example with its description, screenshot and code), a Tutorial, User Guide pages for the model layer (the model, solving, force polyhedra, viewing), a first model on the home page, and a Changelog page.
 * Added tests for every module in `tests/compas_3gs/`, mirroring `src/`, with JSON round trips of the data structures, and `tests/test_examples.py`, which runs every example (marked `gui`).
 
 ### Changed
 
 * Updated workflow.
-* Changed the documentation from Sphinx to MkDocs (Material and mkdocstrings), with the pages converted to Markdown unchanged and an API page per subpackage.
+* Changed the documentation from Sphinx to MkDocs (Material and mkdocstrings), in the layout of compas_pr3d and masonry_dem (Getting Started, User Guide, Examples, API Reference), with the pages converted to Markdown unchanged and an API page per subpackage.
 * Changed the requirements to compas 2.15 (`compas >=2.15, <3`) and Python 3.12.
 * Changed `Mesh3gs`, `Cell` and `EGI` to compas 2 `Mesh`, `Network3gs`, `FormNetwork` and `CellNetwork` to compas 2 `Graph`, and `VolMesh3gs` and `ForceVolMesh` to compas 2 `VolMesh`, all with constructors of the form `__init__(self, *args, name=..., **kwargs)`.
 * Changed `Mesh3gs.face_area` to the vector area, and `Mesh3gs.face_normal` to return a `Vector`, with a fallback for faces whose normal is zero.

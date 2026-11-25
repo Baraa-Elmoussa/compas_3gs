@@ -132,10 +132,12 @@ nav:
   - Getting Started:
       - Introduction: index.md
       - Installation: installation.md
+      - Tutorial: tutorial.md
       - License: license.md
       - Citing: citing.md
       - Publications: publications.md
       - How to contribute: contributing.md
+      - Changelog: changelog.md
   - User Guide:
       - userguide/index.md
       - Theoretical background:
@@ -145,6 +147,11 @@ nav:
           - Design workflow: userguide/theory/02_design_workflow.md
           - Implementation: userguide/theory/03_implementation.md
           - Nomenclature: userguide/theory/04_nomenclature.md
+      - Models:
+          - The model: userguide/model.md
+          - Solving: userguide/solving.md
+          - Force polyhedra: userguide/force_polyhedra.md
+          - Viewing: userguide/viewing.md
       - Polyhedral cell:
           - userguide/polyhedral_cell/index.md
           - Datastructure: userguide/polyhedral_cell/00_00_datastructure.md

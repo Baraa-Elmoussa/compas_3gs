@@ -64,3 +64,48 @@ tailored for the needs of the user.
 
 `compas_3gs` is developed as an open-source library, encouraging researchers from a wide range of disciplines and expertise to make contributions that all users can benefit from.
 In order to incentivise the researchers to contribute their work, each contribution to `compas_3gs` will be treated like a publication which can be cited and referenced.
+
+------------------------------------------------------------------------
+
+## A first model
+
+A tripod: three legs from an apex to pinned feet, and a load at the apex. `GSModel` finds the leg
+forces from equilibrium, and builds the force polyhedron of the apex: one face per force, normal to
+the force and as large as its magnitude.
+
+```python
+from math import cos, radians, sin
+
+from compas_3gs.model import GSModel
+from compas_3gs.viewer import GSViewer
+
+apex = [0.0, 0.0, 3.0]
+feet = [[2.0 * cos(radians(a)), 2.0 * sin(radians(a)), 0.0] for a in (0, 120, 240)]
+
+model = GSModel.from_lines([(apex, foot) for foot in feet])
+for foot in feet:
+    model.set_support(node=model.node_at(foot), dofs="pinned")
+model.add_force(node=model.node_at(apex), vector=[1.5, 0.0, -10.0])
+
+model.solve()                 # leg forces and reactions from equilibrium
+model.derive_force_diagram()  # the force polyhedron of every node with four forces or more
+print(model.summary())
+
+viewer = GSViewer()
+viewer.add_model(model)
+viewer.show()
+```
+
+The legs carry −5.809, −3.105 and −3.105 kN (compression is negative). The feet have two forces
+each, a leg and a reaction, so only the apex has a polyhedron; its faces match the forces to 0.001 %.
+
+![A tripod and the force polyhedron of its apex](assets/images/examples/model_01_tripod.png)
+/// caption
+The tripod in compression (red) on its pinned supports, the load (black) and the reactions (green);
+beside it the force polyhedron of the apex.
+///
+
+The [Tutorial](tutorial.md) goes through a complete analysis, the [User Guide](userguide/index.md)
+explains graphic statics and the methods of the package, the [Examples](examples/index.md) cover
+trusses, towers, domes, tensegrities and polyhedral force diagrams, and the
+[API Reference](api/index.md) lists every class and function.
