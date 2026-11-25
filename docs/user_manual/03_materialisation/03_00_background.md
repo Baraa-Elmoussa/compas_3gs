@@ -1,3 +1,0 @@
-# Background
-
-Under construction...

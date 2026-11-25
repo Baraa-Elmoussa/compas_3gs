@@ -40,8 +40,11 @@ theme:
   features:
     - content.code.copy
     - content.footnote.tooltips
+    - navigation.expand
     - navigation.footer
     - navigation.indexes
+    - navigation.sections
+    - navigation.tabs
     - navigation.top
     - search.highlight
     - search.suggest
@@ -126,94 +129,83 @@ plugins:
             unwrap_annotated: true
 
 nav:
-  - compas_3gs: index.md
-  - Introduction: 00_introduction.md
-  - Getting started: 01_getting_started.md
-  - Overview: 02_overview.md
-  - Theoretical background:
-      - 03_theoretical_background.md
-      - Graphic Statics: overview/00_graphic_statics.md
-      - Motivation: overview/01_motivation.md
-      - Design workflow: overview/02_design_workflow.md
-      - Implementation: overview/03_implementation.md
-      - Nomenclature: overview/04_nomenclature.md
-  - User manual:
-      - 04_user_manual.md
+  - Getting Started:
+      - Introduction: index.md
+      - Installation: installation.md
+      - License: license.md
+      - Citing: citing.md
+      - Publications: publications.md
+      - How to contribute: contributing.md
+  - User Guide:
+      - userguide/index.md
+      - Theoretical background:
+          - userguide/theory/index.md
+          - Graphic Statics: userguide/theory/00_graphic_statics.md
+          - Motivation: userguide/theory/01_motivation.md
+          - Design workflow: userguide/theory/02_design_workflow.md
+          - Implementation: userguide/theory/03_implementation.md
+          - Nomenclature: userguide/theory/04_nomenclature.md
       - Polyhedral cell:
-          - user_manual/00_polyhedral_cell.md
-          - Datastructure: user_manual/00_polyhedral_cell/00_00_datastructure.md
-          - Interpreting diagrams: user_manual/00_polyhedral_cell/00_01_interpretation.md
-          - Constrained manipulation: user_manual/00_polyhedral_cell/00_10_cell_pull_face.md
-          - Arearisation: user_manual/00_polyhedral_cell/00_11_cell_arearise_face.md
-          - Constructor: user_manual/00_polyhedral_cell/00_20_cell_constructor.md
+          - userguide/polyhedral_cell/index.md
+          - Datastructure: userguide/polyhedral_cell/00_00_datastructure.md
+          - Interpreting diagrams: userguide/polyhedral_cell/00_01_interpretation.md
+          - Constrained manipulation: userguide/polyhedral_cell/00_10_cell_pull_face.md
+          - Arearisation: userguide/polyhedral_cell/00_11_cell_arearise_face.md
+          - Constructor: userguide/polyhedral_cell/00_20_cell_constructor.md
       - Multi-cell polyhedron:
-          - user_manual/01_multi-cell_polyhedron.md
-          - Datastructure: user_manual/01_multi-cell_polyhedron/01_00_datastructure.md
-          - Interpreting diagrams: user_manual/01_multi-cell_polyhedron/01_01_interpretation.md
-          - Constructor: user_manual/01_multi-cell_polyhedron/01_10_constructor.md
-          - Duality: user_manual/01_multi-cell_polyhedron/01_20_duality.md
-          - Reciprocation: user_manual/01_multi-cell_polyhedron/01_30_reciprocation.md
-          - Planarisation: user_manual/01_multi-cell_polyhedron/01_40_planarisation.md
-          - Arearisation: user_manual/01_multi-cell_polyhedron/01_50_arearisation.md
-          - Modification: user_manual/01_multi-cell_polyhedron/01_60_modification.md
-          - Transformation: user_manual/01_multi-cell_polyhedron/01_61_transformation.md
-          - Visualisation: user_manual/01_multi-cell_polyhedron/01_70_visualisation.md
-          - Unified diagram: user_manual/01_multi-cell_polyhedron/01_80_unified_diagram.md
-      - Cell network:
-          - user_manual/02_cell_network.md
-          - Datastructure: user_manual/02_cell_network/02_00_datastructure.md
-          - Constructor: user_manual/02_cell_network/02_10_cell_network_constructor.md
-      - Materialisation:
-          - user_manual/03_materialisation.md
-          - Background: user_manual/03_materialisation/03_00_background.md
-          - MycoTree node: user_manual/03_materialisation/03_10_mycotree_node.md
+          - userguide/multi_cell_polyhedron/index.md
+          - Datastructure: userguide/multi_cell_polyhedron/01_00_datastructure.md
+          - Interpreting diagrams: userguide/multi_cell_polyhedron/01_01_interpretation.md
+          - Constructor: userguide/multi_cell_polyhedron/01_10_constructor.md
+          - Duality: userguide/multi_cell_polyhedron/01_20_duality.md
+          - Reciprocation: userguide/multi_cell_polyhedron/01_30_reciprocation.md
+          - Planarisation: userguide/multi_cell_polyhedron/01_40_planarisation.md
+          - Arearisation: userguide/multi_cell_polyhedron/01_50_arearisation.md
+          - Modification: userguide/multi_cell_polyhedron/01_60_modification.md
+          - Transformation: userguide/multi_cell_polyhedron/01_61_transformation.md
+          - Visualisation: userguide/multi_cell_polyhedron/01_70_visualisation.md
+          - Unified diagram: userguide/multi_cell_polyhedron/01_80_unified_diagram.md
+      - Cell network: userguide/cell_network.md
+      - Materialisation: userguide/materialisation.md
   - Examples:
-      - gallery/index.md
+      - examples/index.md
       - Models:
-          - Tripod: gallery/model_01_tripod.md
-          - Space truss: gallery/model_02_space_truss.md
-          - Force first: gallery/model_03_force_first.md
-          - Determinacy: gallery/model_04_determinacy.md
-          - Warren truss, FEM and 3GS: gallery/model_05_warren_truss_fem.md
-          - Transmission tower: gallery/model_06_transmission_tower.md
-          - Schwedler dome: gallery/model_07_schwedler_dome.md
-          - Tensegrity prism: gallery/model_08_tensegrity_prism.md
+          - Tripod: examples/model_01_tripod.md
+          - Space truss: examples/model_02_space_truss.md
+          - Force first: examples/model_03_force_first.md
+          - Determinacy: examples/model_04_determinacy.md
+          - Warren truss, FEM and 3GS: examples/model_05_warren_truss_fem.md
+          - Transmission tower: examples/model_06_transmission_tower.md
+          - Schwedler dome: examples/model_07_schwedler_dome.md
+          - Tensegrity prism: examples/model_08_tensegrity_prism.md
       - Physical structures:
-          - Tripod: gallery/physical_structures_10_tripod.md
-          - Space truss: gallery/physical_structures_20_space_truss.md
-          - Force first frames: gallery/physical_structures_30_force_first_frames.md
-          - Arch thrust line: gallery/physical_structures_40_arch_thrust_line.md
+          - Tripod: examples/physical_structures_10_tripod.md
+          - Space truss: examples/physical_structures_20_space_truss.md
+          - Force first frames: examples/physical_structures_30_force_first_frames.md
+          - Arch thrust line: examples/physical_structures_40_arch_thrust_line.md
       - Polyhedral cell:
-          - Cell pull face: gallery/cell_manipulation_00_10_cell_pull_face.md
-          - Cell arearise face: gallery/cell_manipulation_00_20_cell_arearise_face.md
-          - Cell constructor: gallery/cell_manipulation_00_30_cell_constructor.md
-          - Cell planarisation: gallery/cell_manipulation_00_40_cell_planarisation.md
-          - Cell arearisation: gallery/cell_manipulation_00_41_cell_arearisation.md
+          - Cell pull face: examples/cell_manipulation_00_10_cell_pull_face.md
+          - Cell arearise face: examples/cell_manipulation_00_20_cell_arearise_face.md
+          - Cell constructor: examples/cell_manipulation_00_30_cell_constructor.md
+          - Cell planarisation: examples/cell_manipulation_00_40_cell_planarisation.md
+          - Cell arearisation: examples/cell_manipulation_00_41_cell_arearisation.md
       - Multi-cell polyhedron:
-          - Volmesh constructor: gallery/multi_cell_polyhedron_01_10_volmesh_constructor.md
-          - Volmesh duality volmesh: gallery/multi_cell_polyhedron_01_20_volmesh_duality_volmesh.md
-          - Volmesh duality network: gallery/multi_cell_polyhedron_01_21_volmesh_duality_network.md
-          - Volmesh reciprocation: gallery/multi_cell_polyhedron_01_30_volmesh_reciprocation.md
-          - Volmesh planarisation: gallery/multi_cell_polyhedron_01_40_volmesh_planarisation.md
-          - Volmesh arearisation: gallery/multi_cell_polyhedron_01_50_volmesh_arearisation.md
-          - Volmesh modification: gallery/multi_cell_polyhedron_01_60_volmesh_modification.md
-          - Volmesh color id: gallery/multi_cell_polyhedron_01_70_volmesh_color_id.md
-          - Volmesh visualisation: gallery/multi_cell_polyhedron_01_71_volmesh_visualisation.md
-          - Volmesh unified diagram: gallery/multi_cell_polyhedron_01_80_volmesh_unified_diagram.md
+          - Volmesh constructor: examples/multi_cell_polyhedron_01_10_volmesh_constructor.md
+          - Volmesh duality volmesh: examples/multi_cell_polyhedron_01_20_volmesh_duality_volmesh.md
+          - Volmesh duality network: examples/multi_cell_polyhedron_01_21_volmesh_duality_network.md
+          - Volmesh reciprocation: examples/multi_cell_polyhedron_01_30_volmesh_reciprocation.md
+          - Volmesh planarisation: examples/multi_cell_polyhedron_01_40_volmesh_planarisation.md
+          - Volmesh arearisation: examples/multi_cell_polyhedron_01_50_volmesh_arearisation.md
+          - Volmesh modification: examples/multi_cell_polyhedron_01_60_volmesh_modification.md
+          - Volmesh color id: examples/multi_cell_polyhedron_01_70_volmesh_color_id.md
+          - Volmesh visualisation: examples/multi_cell_polyhedron_01_71_volmesh_visualisation.md
+          - Volmesh unified diagram: examples/multi_cell_polyhedron_01_80_volmesh_unified_diagram.md
   - API Reference:
-      - 05_api_reference.md
-      - compas_3gs.algorithms: api/compas_3gs.algorithms.md
-      - compas_3gs.datastructures: api/compas_3gs.datastructures.md
-      - compas_3gs.diagrams: api/compas_3gs.diagrams.md
-      - compas_3gs.model: api/compas_3gs.model.md
-      - compas_3gs.operations: api/compas_3gs.operations.md
-      - compas_3gs.utilities: api/compas_3gs.utilities.md
-      - compas_3gs.viewer: api/compas_3gs.viewer.md
-  - License: 06_license.md
-  - Citing: 07_citing.md
-  - Publications:
-      - 08_publications.md
-      - compas_3gs: publications/00_compas_3gs.md
-      - 3D graphic statics: publications/10_3gs.md
-      - Contributions: publications/20_contributions.md
-  - How to contribute: 09_how_to_contribute.md
+      - api/index.md
+      - Model: api/compas_3gs.model.md
+      - Viewer: api/compas_3gs.viewer.md
+      - Diagrams: api/compas_3gs.diagrams.md
+      - Algorithms: api/compas_3gs.algorithms.md
+      - Operations: api/compas_3gs.operations.md
+      - Datastructures: api/compas_3gs.datastructures.md
+      - Utilities: api/compas_3gs.utilities.md
