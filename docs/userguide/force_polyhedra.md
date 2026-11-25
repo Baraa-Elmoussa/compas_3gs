@@ -19,27 +19,36 @@ cells = model.derive_force_diagram()  # {node: Cell}
 
 ## How a cell is built
 
-The construction is that of the [polyhedral cell constructor](polyhedral_cell/00_20_cell_constructor.md):
-the force directions give the extended Gaussian image (EGI) of the cell, the EGI gives a cell with the
-right face normals, and planarisation brings each face to the area of its force
-([Planarisation](multi_cell_polyhedron/01_40_planarisation.md)). For one node:
+By Minkowski's theorem, face normals that span space and face areas whose vectors (area times normal) sum to
+zero belong to exactly one convex polyhedron. Forces in equilibrium are such faces, so every node has one
+force polyhedron, and which faces of it meet follows from the force sizes as much as from their directions.
+
+`cell_from_forces` finds it as Minkowski proved it exists. The distances of the face planes from the centre that
+give the largest volume for a given weighted sum of the distances also give face areas in proportion to the
+forces; a quasi-Newton optimisation finds them, the cell is scaled, and Newton steps bring every face to the
+area of its force. For one node:
 
 ```python
-from compas_3gs.algorithms import cell_from_forces
+from compas_3gs.algorithms import cell_from_forces, cell_from_normals_and_areas
 
 cell = cell_from_forces({0: f0, 1: f1, 2: f2, 3: f3}, origin)  # the keys become the face keys
+cell = cell_from_normals_and_areas(normals, areas)              # the same, from normals and areas
 ```
+
+The [polyhedral cell constructor](polyhedral_cell/00_20_cell_constructor.md) of the user manual builds a cell
+in another way: the force directions give the extended Gaussian image (EGI), the EGI a cell with those normals,
+and planarisation sizes its faces ([Planarisation](multi_cell_polyhedron/01_40_planarisation.md)). Its faces
+and their neighbours come from the directions alone, so it suits cells whose faces are designed, and the
+functions it uses stay in `compas_3gs.algorithms`.
 
 ## Which nodes have a polyhedron
 
-- A node needs four forces or more, not all in one plane, and no two in the same direction.
-- A cell is kept only if it reaches its forces: by default within 1 % of the area and 1° of the direction
-  (`derive_force_diagram(max_area_error=0.01, max_angle=1.0)`).
-- The EGI fixes the faces of the cell and which faces touch from the force directions alone. For a node with
-  several forces in one plane and of very different sizes, the polyhedron with those face areas has faces
-  that touch differently, and planarisation cannot reach it: the node is skipped.
-- Four forces always give a tetrahedron ([Tensegrity prism](../examples/model_08_tensegrity_prism.md));
-  many lattice nodes are skipped ([Transmission tower](../examples/model_06_transmission_tower.md)).
+- A node needs four forces or more, not all in one plane, and in equilibrium.
+- No two of its forces may point the same way: a convex polyhedron cannot have two faces with one normal. Two
+  collinear members at a node, one pulling and one pushing in the same direction, are such a pair
+  ([Transmission tower](../examples/model_06_transmission_tower.md): the legs run straight through the levels).
+- Four forces give a tetrahedron ([Tensegrity prism](../examples/model_08_tensegrity_prism.md)); a lattice node
+  with nine forces of very different sizes gives a thin slab with small faces, and both are exact.
 
 ## Force first
 

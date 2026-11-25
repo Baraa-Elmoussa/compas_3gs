@@ -76,7 +76,8 @@ equilibrium: see [Solving](userguide/solving.md).
 
 The force polyhedron of a node has one face per force on it, from a member, the load or the
 reaction: the face is normal to the force and its area is the force's magnitude. The faces close
-into a polyhedron because the forces are in equilibrium.
+into a polyhedron because the forces are in equilibrium, and by Minkowski's theorem there is
+exactly one convex polyhedron with these faces.
 
 ```python
 model.derive_force_diagram()
@@ -87,10 +88,10 @@ for node, reason in model.skipped.items():
 ```
 
 `model.cells` holds the polyhedron of each node and `model.cell_faces` what each face stands for (a
-member, `"load"` or `"reaction"`). `check` measures how well every cell matches its forces. Five
-nodes get a polyhedron that matches its forces within 1 % of the area and 1° of the direction. The
-four others are listed in `model.skipped`: the polyhedron 3GS constructs for them from the force
-directions does not reach the force sizes (see [Force polyhedra](userguide/force_polyhedra.md)).
+member, `"load"` or `"reaction"`). `check` measures how well every cell matches its forces: all
+nine nodes get their polyhedron, its face areas within 10⁻⁹ of the forces and its normals along
+them. A node with fewer than four forces, or with two forces in the same direction, would be listed
+in `model.skipped` instead (see [Force polyhedra](userguide/force_polyhedra.md)).
 
 ## 5. Viewing
 

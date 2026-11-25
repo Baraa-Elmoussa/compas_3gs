@@ -10,6 +10,12 @@
     options:
       heading_level: 3
 
+## Minkowski
+
+::: compas_3gs.algorithms.cell_from_normals_and_areas
+    options:
+      heading_level: 3
+
 ::: compas_3gs.algorithms.cell_from_forces
     options:
       heading_level: 3

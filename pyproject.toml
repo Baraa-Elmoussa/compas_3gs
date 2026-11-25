@@ -95,7 +95,7 @@ replace = "[{new_version}] {now:%Y-%m-%d}"
 line-length = 179
 indent-width = 4
 target-version = "py312"
-extend-exclude = ["docs", "examples/rhino"]
+extend-exclude = [".agents", "docs", "examples/rhino"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]

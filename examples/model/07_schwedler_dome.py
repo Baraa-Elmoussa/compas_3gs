@@ -106,7 +106,7 @@ for name, lines in groups.items():
         forces.append(snowy.form.edge_force(edge if snowy.form.has_edge(edge) else edge[::-1]))
     print("  {:10s} {:+9.2f}  {:+9.2f}".format(name, min(forces), max(forces)))
 
-models["self-weight"].derive_force_diagram(kmax=300)
+models["self-weight"].derive_force_diagram()
 print("\nforce polyhedra under the self-weight: {} nodes, {} without".format(len(models["self-weight"].cells), len(models["self-weight"].skipped)))
 
 # ------------------------------------------------------------------------------

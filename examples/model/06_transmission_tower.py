@@ -94,7 +94,7 @@ for point in levels[0]:
     hand = weight / 4 + (moment / (2 * 2 * BASE) if point[1] > 0 else -moment / (2 * 2 * BASE))
     print("  footing at ({:+.0f}, {:+.0f}): {:+8.3f}   {:+8.3f}".format(point[0], point[1], form.node_reaction(node)[2], hand))
 
-model.derive_force_diagram(kmax=300)
+model.derive_force_diagram()
 print("\nforce polyhedra: {} nodes, {} without".format(len(model.cells), len(model.skipped)))
 
 # ------------------------------------------------------------------------------

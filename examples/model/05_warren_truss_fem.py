@@ -9,7 +9,7 @@ A. On three bearings (pinned, roller, slider) the truss is statically determinat
    independent equilibrium equations as unknowns. 3GS gets the member forces from statics alone,
    so the finite element model must give the same forces for any member stiffness. It also gives
    what statics cannot: the displacements. 3GS also gives what the finite element model does not:
-   the force polyhedron of every node, here kept only where it reaches the forces (`check`).
+   the force polyhedron of every node with at least four forces.
 B. With a fourth bearing the truss is statically indeterminate, with one self-stress state: every
    state in equilibrium with the loads is one of them plus any multiple of it, a line of states.
    - The member stiffness picks one point on that line, the elastic state. 3GS gives it from
@@ -87,7 +87,7 @@ print("{} nodes, {} members, {} reaction components".format(form.number_of_nodes
 result = model.solve()
 print("A. three bearings: determinate {}, out of balance {:.1e} kN".format(result.determinate, result.residual))
 
-model.derive_force_diagram(kmax=500)  # keeps the cells that reach the forces; the others are listed in model.skipped
+model.derive_force_diagram()  # nodes without a polyhedron are listed in model.skipped, with the reason
 print("force polyhedra: {} nodes, {} without".format(len(model.cells), len(model.skipped)))
 
 # ------------------------------------------------------------------------------
@@ -203,7 +203,7 @@ change = max(form.edges(), key=lambda edge: abs(chosen[edge] - elastic_forces[ed
 print("   chosen state, vertical reactions: {}".format(", ".join("node {} {:+.3f}".format(node, round(indeterminate.form.node_reaction(node)[2], 9) + 0.0) for node in bearings)))
 print("   largest change from the elastic state: member {} {:+.3f} -> {:+.3f} kN".format(change, elastic_forces[change], chosen[change]))
 
-indeterminate.derive_force_diagram(kmax=500)
+indeterminate.derive_force_diagram()
 print("   force polyhedra of the chosen state: {} nodes, {} without".format(len(indeterminate.cells), len(indeterminate.skipped)))
 
 # ------------------------------------------------------------------------------

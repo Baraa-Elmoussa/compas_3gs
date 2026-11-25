@@ -271,32 +271,18 @@ class GSModel(Data):
         self.cells, self.cell_faces, self.skipped = {}, {}, {}
         return result
 
-    def derive_force_diagram(
-        self,
-        kmax: int = 2000,
-        tolerance_flat: float = 0.001,
-        tolerance_area: float = 0.0001,
-        max_area_error: float = 0.01,
-        max_angle: float = 1.0,
-    ) -> dict[int, Cell]:
+    def derive_force_diagram(self, tol: float | None = None) -> dict[int, Cell]:
         """Construct the force polyhedron of every node from the forces of the form diagram.
 
-        Each force on a node, from a member, the load or the reaction, gives one face of its cell; see `cell_from_forces`.
-        A cell is kept only if it reaches the forces (see `check`): the EGI gives the faces of a cell and their neighbours
-        from the force directions alone, and for some nodes, typically with several forces in one plane and of very
-        different sizes, the polyhedron with these face areas has other neighbours. Those nodes, and nodes with fewer than
-        four forces or with all forces in one plane, have no polyhedron: they are listed in `skipped`, with the reason.
+        Each force on a node, from a member, the load or the reaction, gives one face of its cell, normal to the force
+        and with its magnitude as area: the one convex cell with these faces (`cell_from_forces`). Nodes with fewer than
+        four forces, with two forces in the same direction, with all forces in one plane, or not in equilibrium have no
+        polyhedron: they are listed in `skipped`, with the reason.
 
         Parameters
         ----------
-        kmax
-            The number of planarisation iterations per cell.
-        tolerance_flat, tolerance_area
-            The convergence thresholds of `cell_planarise`.
-        max_area_error
-            The largest difference between a face area and its force, relative to the force, for a cell to be kept.
-        max_angle
-            The largest angle, in degrees, between a face normal and its force, for a cell to be kept.
+        tol
+            The largest relative difference between a face area and its force; see `cell_from_forces`.
 
         Returns
         -------
@@ -318,17 +304,12 @@ class GSModel(Data):
                 forces[face] = list(vector)
                 labels[face] = name
             try:
-                cell = cell_from_forces(forces, self.form.node_coordinates(node), kmax=kmax, tolerance_flat=tolerance_flat, tolerance_area=tolerance_area)
+                cell = cell_from_forces(forces, self.form.node_coordinates(node), tol=tol)
             except ValueError as error:
                 self.skipped[node] = str(error)
                 continue
             self.cells[node] = cell
             self.cell_faces[node] = labels
-        for node, report in self.check().items():
-            if report["area_error"] > max_area_error or report["angle"] > max_angle:
-                self.skipped[node] = "The cell does not reach the forces: area error {:.0%}, angle {:.1f} degrees.".format(report["area_error"], report["angle"])
-                del self.cells[node]
-                del self.cell_faces[node]
         return self.cells
 
     # --------------------------------------------------------------------------

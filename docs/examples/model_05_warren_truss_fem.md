@@ -9,7 +9,7 @@ A. On three bearings (pinned, roller, slider) the truss is statically determinat
    independent equilibrium equations as unknowns. 3GS gets the member forces from statics alone,
    so the finite element model must give the same forces for any member stiffness. It also gives
    what statics cannot: the displacements. 3GS also gives what the finite element model does not:
-   the force polyhedron of every node, here kept only where it reaches the forces (`check`).
+   the force polyhedron of every node with at least four forces.
 
 B. With a fourth bearing the truss is statically indeterminate, with one self-stress state: every
    state in equilibrium with the loads is one of them plus any multiple of it, a line of states.

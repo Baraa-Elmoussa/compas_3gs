@@ -23,7 +23,7 @@ print(model.summary())                                # text table of forces and
 | `GSModel.from_force_diagram(force, kmax=500, edge_min=0.1, edge_max=1e6, tolerance=0.001)` | force first, see below |
 | `model.solve(stiffness=None, forces=None, reactions=None, tol=None)` | `EquilibriumResult`; writes edge `_f`, node `_rx _ry _rz`; clears old cells |
 | `model.self_stresses` | after `solve`: `[({edge: force}, {node: Vector}), ...]`, one per self-stress state |
-| `model.derive_force_diagram(kmax=2000, tolerance_flat=0.001, tolerance_area=1e-4, max_area_error=0.01, max_angle=1.0)` | `{node: Cell}`; nodes without a polyhedron in `model.skipped` with the reason |
+| `model.derive_force_diagram(tol=None)` | `{node: Cell}`, one exact cell per node (`cell_from_forces`); nodes without a polyhedron in `model.skipped` with the reason |
 | `model.cell_faces[node]` | `{face: edge or "load" or "reaction"}`: what each cell face stands for |
 | `model.check()` | `{node: {"area_error", "angle"}}`: how well each cell matches its forces |
 | `model.forces()`, `model.reactions()` | `{edge: float}` (tension positive), `{node: Vector}` |
@@ -85,16 +85,18 @@ result = truss_equilibrium(vertices, edges, loads, supports, stiffness=None, for
   reactions `{vertex: [rx, ry, rz]}`, self-stress states as `(forces, reactions)` scaled to a largest
   member force of 1.
 
-`cell_from_forces(forces, origin, kmax=2000, tolerance_flat=0.001, tolerance_area=1e-4)` builds one
-force polyhedron from `{key: force vector}`; it raises `ValueError` for fewer than four forces, two in
-the same direction, or all in one plane.
+`cell_from_forces(forces, origin, tol=None)` builds one force polyhedron from `{key: force vector}`:
+the one convex cell with a face per force, normal to it and as large as its magnitude
+(`cell_from_normals_and_areas`, the Minkowski problem). It raises `ValueError` for fewer than four
+forces, two in the same direction, all in one plane, or forces out of balance.
 
 ## Limits
 
 - Trusses only: pin-jointed members, axial forces, no moments.
-- The force polyhedron of a node takes its faces and their neighbours from the force directions
-  (the EGI). For nodes with several forces in one plane and of very different sizes, the polyhedron
-  with those face areas has other neighbours, and the cell is not kept (`model.skipped`).
-  Four forces always work (a tetrahedron).
+- A node with two forces in the same direction has no force polyhedron (a convex cell cannot have two
+  faces with one normal): collinear members at a node, one pulling and one pushing the same way.
+- The EGI route (`egi_from_vectors`, `cell_from_egi`, `cell_planarise`) is still there for designed
+  cells; it takes the faces and their neighbours from the directions alone, so it does not reach
+  arbitrary force sizes. Use `cell_from_forces` for force polyhedra.
 - A force-first `GSModel` saved to JSON comes back with extra halffaces (compas `VolMesh` bug,
   [`compas2.md`](compas2.md)).

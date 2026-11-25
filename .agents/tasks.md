@@ -14,7 +14,8 @@ Look here before writing code: these all exist. Examples run from the repository
 | prestress a tensegrity or cable structure | `model.solve(forces={strut: -N})` with no loads | `examples/model/08_tensegrity_prism.py` |
 | compare with linear finite elements | the elastic `solve` is the FEM state; an inline FEM check | `examples/model/05_warren_truss_fem.py` |
 | get the force polyhedron of every node | `model.derive_force_diagram()`, `model.cells`, `model.check()`, `model.skipped` | `examples/model/02_space_truss.py` |
-| get one force polyhedron from force vectors | `cell_from_forces(forces, origin)` | `examples/physical_structures/10_tripod.py` |
+| get one force polyhedron from force vectors | `cell_from_forces(forces, origin)` | `tests/compas_3gs/algorithms/test_minkowski.py` |
+| build a convex cell from face normals and areas | `cell_from_normals_and_areas(normals, areas)` | `tests/compas_3gs/algorithms/test_minkowski.py` |
 | go from a force diagram to its structure | `GSModel.from_force_diagram(volmesh)` | `examples/model/03_force_first.py` |
 | make a form diagram reciprocal to a force diagram | `volmesh_dual_network(volmesh, cls=FormNetwork)`, `volmesh_reciprocate(volmesh, form)` | `examples/multi_cell_polyhedron/01_30_volmesh_reciprocation.py` |
 | switch compression and tension | `point_reflection(volmesh)` | `examples/physical_structures/30_force_first_frames.py` |
