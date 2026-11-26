@@ -85,8 +85,9 @@ def test_add_model_force_first(viewer):
 def test_support_glyphs(viewer, dofs, objects):
     # a tetrahedron, with a line along the free direction for a slider and two rollers for a roller
     group = viewer.scene.add_group(name="supports")
-    viewer.add_support([0.0, 0.0, 0.0], dofs, 0.1, parent=group)
+    glyph = viewer.add_support([0.0, 0.0, 0.0], dofs, 0.1, parent=group)
     assert len(group.children) == objects
+    assert glyph == list(group.children)
 
 
 @pytest.mark.gui
@@ -103,6 +104,53 @@ def test_members_carry_their_info(viewer, tripod):
         # the force the member applies to its first node, along the edge direction
         direction = tripod.form.edge_direction(edge)
         assert [data["fx"], data["fy"], data["fz"]] == pytest.approx([force * c for c in direction], abs=1e-3)
+
+
+@pytest.mark.gui
+def test_node_info(viewer, tripod):
+    form = tripod.form
+    apex = tripod.node_at(APEX)
+
+    info = viewer.node_info(form, apex)
+
+    assert list(info)[:4] == ["node", "px", "py", "pz"]
+    assert [info["px"], info["py"], info["pz"]] == pytest.approx([1.5, 0.0, -10.0])
+    assert "support" not in info
+    assert {key: value for key, value in info.items() if key.startswith("member")} == pytest.approx(
+        {"member {}-{}".format(u, v): form.edge_force((u, v)) for u, v in form.node_edges(apex)}, abs=1e-3
+    )
+    # the reactions of the three feet balance the load
+    feet = [viewer.node_info(form, tripod.node_at(foot)) for foot in FEET]
+    for foot in feet:
+        assert list(foot)[:5] == ["node", "support", "rx", "ry", "rz"]
+        assert foot["support"] == form.node_attribute(foot["node"], "support")
+    assert [sum(foot[key] for foot in feet) for key in ("rx", "ry", "rz")] == pytest.approx([-1.5, 0.0, 10.0], abs=1e-2)
+
+
+@pytest.mark.gui
+def test_loads_supports_reactions_and_cells_carry_the_forces_on_their_node(viewer, tripod):
+    groups = viewer.add_model(tripod)
+
+    for name in ("loads", "supports", "reactions", "cells"):
+        for obj in groups[name].children:
+            assert obj.attributes["data"] == viewer.node_info(tripod.form, obj.attributes["node"])
+    assert [obj.name for obj in groups["loads"].children] == ["load {}".format(tripod.node_at(APEX))]
+    assert sorted(obj.name for obj in groups["reactions"].children) == sorted("reaction {}".format(tripod.node_at(foot)) for foot in FEET)
+    assert groups["cells"].children[0].attributes["node"] == tripod.node_at(APEX)
+
+
+@pytest.mark.gui
+def test_force_diagram_cells_carry_the_forces_on_their_node(viewer):
+    force = ForceVolMesh.from_meshgrid(2.0, 2.0, 2.0, 1, 1, 1)
+    volmesh_cell_subdivide_barycentric(force, next(iter(force.cells())))
+    model = GSModel.from_force_diagram(force)
+
+    groups = viewer.add_model(model)
+
+    for obj in groups["cells"].children:
+        node = obj.attributes["node"]
+        assert obj.attributes["data"] == viewer.node_info(model.form, node)
+        assert sum(key.startswith("member") for key in obj.attributes["data"]) == model.form.degree(node)
 
 
 @pytest.mark.gui
@@ -128,6 +176,10 @@ def test_update_form_after_solving_again(viewer, tripod):
     for member in groups["members"].children:
         assert member.attributes["data"]["type"] == "tension"
         assert member.linecolor == Color.red()
+    for name in ("loads", "supports", "reactions"):
+        for obj in groups[name].children:
+            assert obj.attributes["data"] == viewer.node_info(tripod.form, obj.attributes["node"])
+    assert sum(obj.attributes["data"]["rz"] for obj in groups["reactions"].children) == pytest.approx(-10.0, abs=1e-2)
 
 
 @pytest.mark.gui

@@ -74,16 +74,17 @@ def valuedict_to_colordict(
     Returns
     -------
     dict[Hashable, tuple[int, int, int]]
-        Dictionary of key-color pairs, from lowest to highest based on a color gradient scheme.
+        Dictionary of key-color pairs, from lowest to highest based on a color gradient scheme;
+        all keys get the colour of the lowest value when all values are equal.
 
     """
     c_dict = {}
 
     lb = min(value_dict.values())
-    ub = max(value_dict.values())
+    span = (max(value_dict.values()) - lb) or 1.0
 
     for key in value_dict:
-        value = (value_dict[key] - lb) / (ub - lb)
+        value = (value_dict[key] - lb) / span
         color = color_scheme(value) if color_scheme else Color.from_i(max(0.0, min(1.0, value))).rgb255
         c_dict[key] = color
 
@@ -144,6 +145,7 @@ def compare_initial_current(
 def get_force_mags(volmesh, network):
     """Returns a dictionary of (u,v)-magnitude pairs.
     Negative magnitude means compression, while positive magnitude means tension.
+    A member that lies in the plane of its face, with no direction to give its force a sign, gets 0.
     """
 
     uv_hf_dict = pair_uv_to_hf(network, volmesh)
@@ -157,11 +159,7 @@ def get_force_mags(volmesh, network):
         face_area = volmesh.halfface_area(hfkey)
         dot = dot_vectors(face_normal, edge_vector)
 
-        if dot < 0:
-            factor = -1
-
-        if dot > 0:
-            factor = 1
+        factor = 1 if dot > 0 else -1 if dot < 0 else 0
 
         force = face_area * factor * volmesh.attributes["convention"]
 

@@ -20,9 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Added `compas_3gs.algorithms.cell_from_normals_and_areas`: the convex cell with given face normals and areas (the Minkowski problem), from Minkowski's variational principle and Newton steps on the face areas.
 * Added `compas_3gs.algorithms.cell_from_forces`: the force polyhedron of a node from the forces on it, through `cell_from_normals_and_areas`.
 * Added `compas_3gs.model.GSModel`: a form diagram with supports and forces, its equilibrium (`solve`, with optional member stiffness and prescribed forces and reactions, and `self_stresses`) and the force polyhedron of every node (`derive_force_diagram`, `check`), built from member lines (`from_lines`) or from a polyhedral force diagram (`from_force_diagram`).
-* Added `compas_3gs.viewer.GSViewer`, a compas_viewer `Viewer` that draws a `GSModel` in groups: members in compression and tension with their forces, support glyphs, loads, reactions and the force diagram. Selecting a member shows its type (compression or tension), signed force and force components in an info panel of the sidebar; `update_form` redraws the members after the forces change. The module needs compas_viewer.
+* Added `compas_3gs.viewer.GSViewer`, a compas_viewer `Viewer` that draws a `GSModel` in groups: members in compression and tension with their forces, support glyphs, loads, reactions and the force diagram. Selecting a member shows its type (compression or tension), signed force and force components in an info panel of the sidebar, and selecting a load, a support, a reaction or a force polyhedron shows the forces on its node (`node_info`: load, support, reaction and member forces); `update_form` redraws the members and refreshes this info after the forces change. The module needs compas_viewer.
 * Added examples of `GSModel` and `GSViewer` in `examples/model/`, including a 3D Warren truss solved with 3GS and with linear finite elements, on three bearings and, statically indeterminate, on four, where the state in equilibrium is picked in the input or with a slider (`05_warren_truss_fem.py`), a lattice transmission tower (`06_transmission_tower.py`), a Schwedler dome against membrane theory (`07_schwedler_dome.py`) and a prestressed tensegrity prism (`08_tensegrity_prism.py`).
 * Added to the documentation: an Examples section (a card per example, and one page per example with its description, screenshot and code), a Tutorial, User Guide pages for the model layer (the model, solving, force polyhedra, viewing), a first model on the home page, and a Changelog page.
+* Added `__data__`, `__from_data__`, `delete_cell`, `is_valid`, `edge_halffaces`, `halfface_manifold_neighbors`, `cell_vertex_neighbors` and `cell_vertex_faces` to `compas_3gs.datastructures.VolMesh3gs`, in place of the compas 2.15 and 2.16 `VolMesh` methods, which fail. A `VolMesh3gs`, a `ForceVolMesh` and a force-first `GSModel` go through JSON and `copy()` with their keys and cell attributes, `edge_cells` lists the cells in order around the edge, and `delete_cell` removes the attributes of the faces and edges that no other cell uses.
 * Added tests for every module in `tests/compas_3gs/`, mirroring `src/`, with JSON round trips of the data structures, and `tests/test_examples.py`, which runs every example (marked `gui`).
 
 ### Changed
@@ -38,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Changed `point_reflection` to work for graphs, meshes and volmeshes.
 * Changed the volmesh operations to rebuild cells through the public API, keeping cell, face and edge attributes.
 * Changed mutable default arguments to `None`.
+* Changed `cell_arearise_face` to follow Lee (2018, §5.3.2.1) in full: the golden section search on the position of the face runs up to `zmax` (new parameter, a distance along the normal) or up to the vertex of the parabola of the face area, so that of two positions with the target area the nearer one is found; the move direction comes from that parabola; it raises `ValueError` if the target area is out of reach.
+* Changed `valuedict_to_colordict` to give every key the colour of the lowest value when all values are equal, `get_force_mags` to give 0 to a member in the plane of its face, and the docstring of `datastructure_centroid` to meshes and volmeshes.
 * Changed the volmesh `scale` to `attributes["scale"]`.
 * Moved the old Rhino examples and `.3dm` files to `examples/rhino/`.
 * Fixed `add_vertex(vkey=...)` calls in `volmesh_dual_volmesh` and `volmesh_vertex_merge`, which stored the key as an attribute and let compas pick another key.
@@ -58,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Removed `setup.py`, `setup.cfg`, `MANIFEST.in`, `.bumpversion.cfg` and `pytest.ini`.
 * Removed the Rhino drawing methods of `Mesh3gs`.
 * Removed the `Network3gs` aliases `vertices`, `vertex_coordinates` and `vertex_neighbors`, `Network3gs.bounding_box` and the `Network3gs.edge_vector` override.
-* Removed `VolMesh3gs.delete_cell` (compas has it), `VolMesh3gs.cell_vertex_delete` and `VolMesh3gs.delete_halfface`.
+* Removed `VolMesh3gs.cell_vertex_delete` and `VolMesh3gs.delete_halfface`.
 * Removed `VolMesh3gs.boundary_halfface_manifold_neighbors` and `boundary_halfface_manifold_neighborhood`, which skipped neighbours in the same cell and passed the wrong key in their ring loop.
 * Removed private helpers that nothing uses any more from `algorithms/planarisation.py` and `utilities/geometry.py`.
+* Removed `untangle_polygon` and `is_polygon_self_intersecting` from `utilities/geometry.py` (not exported, no callers), and the unused `lmin` / `lmax` edge defaults of `Network3gs`.

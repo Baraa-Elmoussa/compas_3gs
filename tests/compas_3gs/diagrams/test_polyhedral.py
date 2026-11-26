@@ -249,10 +249,6 @@ def test_forcevolmesh_from_vertices_and_cells_is_valid(force):
 
 
 @pytest.mark.roundtrip
-@pytest.mark.xfail(
-    strict=True,
-    reason="compas 2.15.1 VolMesh.__data__ writes each face of a cell once per halfedge (192 halffaces instead of 48) and raises TypeError once a cell attribute is set",
-)
 @pytest.mark.parametrize("how", ["json", "copy"])
 def test_forcevolmesh_roundtrip(force, how):
     force.name = "grid force"

@@ -18,8 +18,6 @@ class Network3gs(Graph):
         self.dual = None
         self.default_edge_attributes.update(
             {
-                "lmin": 0.0,
-                "lmax": 1e7,
                 "_a": 0.0,
             }
         )

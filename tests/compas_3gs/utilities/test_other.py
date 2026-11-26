@@ -79,14 +79,12 @@ def test_valuedict_to_colordict_color_scheme():
     assert colors == {"a": (0, 0, 0), "b": (64, 0, 0), "c": (255, 0, 0)}
 
 
-@pytest.mark.xfail(strict=True, raises=ZeroDivisionError, reason="valuedict_to_colordict divides by max - min, which is 0 when all values are equal (TODO.md)")
 def test_valuedict_to_colordict_equal_values():
     colors = valuedict_to_colordict({"a": 1.0, "b": 1.0, "c": 1.0})
 
     assert list(colors) == ["a", "b", "c"]
-    for color in colors.values():
-        assert isinstance(color, tuple) and len(color) == 3
-        assert all(isinstance(c, int) and 0 <= c <= 255 for c in color)
+    # all of them the colour of the lowest value
+    assert set(colors.values()) == {valuedict_to_colordict({"low": 0.0, "high": 1.0})["low"]}
 
 
 def test_compare_initial_current():
@@ -124,6 +122,15 @@ def test_get_force_mags_reversed_edge(diagrams):
     # node 2 behind node 1: the edge (1, 2) runs against the normal, tension
     network.node_attribute(2, "x", 1.0)
     assert get_force_mags(volmesh, network) == {(0, 1): pytest.approx(-1.0), (1, 2): pytest.approx(4.0)}
+
+
+def test_get_force_mags_edge_in_the_plane_of_its_face(diagrams):
+    volmesh, network = diagrams
+
+    # node 2 beside node 1: the edge (1, 2) is perpendicular to the normal of its face (x = 2)
+    x, y, z = network.node_coordinates(1)
+    network.node_attributes(2, "xyz", [x, y + 1.0, z])
+    assert get_force_mags(volmesh, network) == {(0, 1): pytest.approx(-1.0), (1, 2): 0.0}
 
 
 def test_get_force_colors_uv(diagrams):

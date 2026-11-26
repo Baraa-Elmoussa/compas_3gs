@@ -251,7 +251,6 @@ def test_roundtrip(tripod, how):
 
 
 @pytest.mark.roundtrip
-@pytest.mark.xfail(strict=True, reason="compas 2.15.1 VolMesh.__data__ writes each face of a cell once per halfedge, so the force diagram comes back with extra faces")
 def test_roundtrip_force_first(force_first):
     other = compas.json_loads(compas.json_dumps(force_first))
     assert other.form.dual is other.force

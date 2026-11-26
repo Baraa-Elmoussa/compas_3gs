@@ -66,8 +66,6 @@ and `model.force.primal` the form diagram.
 ## Saving
 
 A `GSModel` is a compas `Data` object: `model.to_json(path)` and `GSModel.from_json(path)` save and
-load it with its form diagram (supports, loads and forces included) and its force diagram. A
-force-first model does not come back exactly yet, because of a bug in compas 2.15.1 `VolMesh`
-serialisation (see `TODO.md` in the repository).
+load it with its form diagram (supports, loads and forces included) and its force diagram.
 
 Next: [Solving](solving.md).

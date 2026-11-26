@@ -27,50 +27,74 @@ STEEP_FRUSTUM = {
     "faces": [[0, 3, 2, 1], [4, 5, 6, 7], [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]],
 }
 
-# the default convergence tolerance of cell_arearise_face, documented as an area
-TOL_AREA = 1e-3
+# a wedge: its bottom face (face 0, 2 x 1 at z = 0) shrinks linearly as it moves up, to nothing at z = 2, and turns over beyond
+WEDGE = {
+    "vertices": [[0, 0, 0], [2, 0, 0], [0, 0, 2], [0, 1, 0], [2, 1, 0], [0, 1, 2]],
+    "faces": [[0, 3, 4, 1], [0, 2, 5, 3], [1, 4, 5, 2], [0, 1, 2], [3, 5, 4]],
+}
 
 
 @pytest.mark.parametrize(
-    "data, fkey, target",
+    "data, fkey, target, zmax",
     [
-        pytest.param(CELL_GSS, 0, 5.0, id="gss-larger"),
-        pytest.param(CELL_GSS, 0, 1.0, id="gss-smaller"),
-        pytest.param(CELLS[1], 5, 20.0, id="frustum-top-larger"),
-        pytest.param(
-            CELL_GSS,
-            2,
-            2.6,
-            id="gss-face-2",
-            marks=pytest.mark.xfail(
-                strict=True,
-                reason=(
-                    "arearisation.py:87: `tol` (documented at arearisation.py:31 as an area) is passed to golden_section_search, "
-                    "where it is a width of the move distance; face 2 of cell_gss.json goes 2.527 -> 2.5956, an area error of 0.0044 > 1e-3"
-                ),
-            ),
-        ),
-        pytest.param(
-            STEEP_FRUSTUM,
-            1,
-            97.0,
-            id="steep-frustum",
-            marks=pytest.mark.xfail(
-                strict=True,
-                reason=(
-                    "arearisation.py:84-85: the search interval [0, |area - target|] uses an area as a distance; this face shrinks by about 0.2 "
-                    "per unit move, so the target is out of reach: 98.01 -> 97.81 instead of 97"
-                ),
-            ),
-        ),
+        pytest.param(CELL_GSS, 0, 5.0, None, id="gss-larger"),
+        pytest.param(CELL_GSS, 0, 1.0, None, id="gss-smaller"),
+        pytest.param(CELL_GSS, 2, 2.6, None, id="gss-face-2"),
+        pytest.param(CELLS[1], 5, 20.0, None, id="frustum-top-larger"),
+        # this face shrinks by about 0.2 per unit move, so the target is beyond the default search range of 1.01
+        pytest.param(STEEP_FRUSTUM, 1, 97.0, 10.0, id="steep-frustum"),
     ],
 )
-def test_cell_arearise_face_reaches_target_area(data, fkey, target):
+def test_cell_arearise_face_reaches_target_area(data, fkey, target, zmax):
     cell = Cell.from_vertices_and_faces(data["vertices"], data["faces"])
 
-    cell_arearise_face(cell, fkey, target)
+    cell_arearise_face(cell, fkey, target, tol=1e-9, zmax=zmax)
 
-    assert abs(cell.face_area(fkey) - target) < TOL_AREA
+    assert abs(cell.face_area(fkey) - target) < 1e-6
+
+
+def test_cell_arearise_face_tol_is_a_distance_along_the_normal():
+    exact = Cell.from_vertices_and_faces(CELL_GSS["vertices"], CELL_GSS["faces"])
+    cell_arearise_face(exact, 2, 2.6, tol=1e-12)
+    cell = Cell.from_vertices_and_faces(CELL_GSS["vertices"], CELL_GSS["faces"])
+    cell_arearise_face(cell, 2, 2.6, tol=1e-3)
+
+    offset = dot_vectors(subtract_vectors(cell.face_centroid(2), exact.face_centroid(2)), exact.face_normal(2))
+    assert abs(offset) < 1e-3
+
+
+def test_cell_arearise_face_finds_the_nearer_position():
+    # the top face of the frustum has an area of 2 at 0.72 and at 2.61 above its position, on either side of the apex
+    cell = Cell.from_vertices_and_faces(CELLS[1]["vertices"], CELLS[1]["faces"])
+
+    cell_arearise_face(cell, 5, 2.0, tol=1e-9)
+
+    assert cell.face_centroid(5)[2] == pytest.approx(5 + 5 / 3 * (1 - (2 / 6.25) ** 0.5))
+
+
+def test_cell_arearise_face_turns_the_face_over_for_a_negative_target():
+    cell = Cell.from_vertices_and_faces(WEDGE["vertices"], WEDGE["faces"])
+    normal = cell.face_normal(0)
+
+    cell_arearise_face(cell, 0, -0.5, tol=1e-9)
+
+    assert cell.face_area(0) == pytest.approx(0.5)
+    assert dot_vectors(cell.face_normal(0), normal) < 0
+
+
+def test_cell_arearise_face_raises_beyond_the_search_range():
+    cell = Cell.from_vertices_and_faces(STEEP_FRUSTUM["vertices"], STEEP_FRUSTUM["faces"])
+
+    with pytest.raises(ValueError, match="does not reach"):
+        cell_arearise_face(cell, 1, 97.0)
+
+
+def test_cell_arearise_face_raises_beyond_the_apex():
+    # the top face of the frustum shrinks to a point at the apex and grows again beyond it, so it never turns over
+    cell = Cell.from_vertices_and_faces(CELLS[1]["vertices"], CELLS[1]["faces"])
+
+    with pytest.raises(ValueError, match="does not reach"):
+        cell_arearise_face(cell, 5, -1.0, zmax=10.0)
 
 
 @pytest.mark.parametrize(
@@ -82,34 +106,9 @@ def test_cell_arearise_face_reaches_target_area(data, fkey, target):
         # faces with vertices of degree 4, which are split first
         pytest.param(CELLS[0], 2, 50.0, id="indeterminate-larger"),
         pytest.param(CELLS[0], 6, 15.0, id="indeterminate-smaller"),
-        pytest.param(
-            CELLS[1],
-            4,
-            50.0,
-            id="frustum-bottom-smaller",
-            marks=pytest.mark.xfail(
-                strict=True,
-                reason=(
-                    "arearisation.py:84-87: the search interval [0, |area - target|] = [0, 50] reaches past the apex of the sides (a move of 6.67), "
-                    "where the area grows again, and the search returns that solution: the bottom face ends at z = 11.38 instead of 1.95, "
-                    "above the top face, and the cell is inverted (signed volume -82.06)"
-                ),
-            ),
-        ),
-        pytest.param(
-            CELLS[1],
-            5,
-            2.0,
-            id="frustum-top-smaller",
-            marks=pytest.mark.xfail(
-                strict=True,
-                reason=(
-                    "arearisation.py:84-87: the search interval [0, |area - target|] = [0, 4.25] reaches past the apex of the sides (a move of 1.67), "
-                    "where the area grows again, and the search returns that solution: the top face ends at z = 7.61 instead of 5.72 "
-                    "and the cell intersects itself (a vertex 1.13 in front of a face plane)"
-                ),
-            ),
-        ),
+        # two positions have the target area, on either side of the apex of the sides: the nearer one keeps the cell convex
+        pytest.param(CELLS[1], 4, 50.0, id="frustum-bottom-smaller"),
+        pytest.param(CELLS[1], 5, 2.0, id="frustum-top-smaller"),
     ],
 )
 def test_cell_arearise_face_keeps_cell_closed(data, fkey, target):

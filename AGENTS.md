@@ -34,7 +34,8 @@ Read these pages of the documentation (Markdown, in `docs/`) before changing an 
   → [`.agents/algorithms.md`](.agents/algorithms.md), [`.agents/operations.md`](.agents/operations.md),
   [`.agents/diagrams.md`](.agents/diagrams.md)
 - **Draw** a model in compas_viewer, grouped, with compression and tension, supports, loads,
-  reactions, force cells and an info panel with the force of a selected member.
+  reactions, force cells and an info panel with the force of a selected member and the forces on
+  the node of a selected load, support, reaction or cell.
   → [`.agents/viewer.md`](.agents/viewer.md)
 
 [`.agents/tasks.md`](.agents/tasks.md) maps common tasks to the call and to an example that does it.
@@ -45,7 +46,7 @@ Read these pages of the documentation (Markdown, in `docs/`) before changing an 
 2. Start from the closest script in `examples/` (`examples/model/` for the `GSModel` API); every
    example runs from the repository root and is tested by `tests/test_examples.py`.
 3. Read [`.agents/compas2.md`](.agents/compas2.md) before touching a `VolMesh`: several compas
-   2.15.1 methods are broken or surprising, and the package works around them.
+   2.15 and 2.16 methods are broken or surprising, and the package works around them.
 4. Conventions: member forces are positive in tension and negative in compression; no units are
    imposed (the examples use kN and m); node and edge keys are not indices.
 
