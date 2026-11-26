@@ -28,7 +28,7 @@ def test_constructor():
     assert network.dual is None
     assert network.attributes == {}
     assert network.default_node_attributes == {"x": 0.0, "y": 0.0, "z": 0.0}
-    assert network.default_edge_attributes == {"lmin": 0.0, "lmax": 1e7, "_a": 0.0}
+    assert network.default_edge_attributes == {"_a": 0.0}
     assert network.number_of_nodes() == 0
     assert Network3gs(name="form").name == "form"
 

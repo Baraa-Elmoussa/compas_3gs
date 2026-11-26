@@ -6,11 +6,7 @@ from compas.geometry import centroid_points
 from compas.geometry import centroid_points_weighted
 from compas.geometry import cross_vectors
 from compas.geometry import distance_point_point
-from compas.geometry import dot_vectors
-from compas.geometry import intersection_line_line
-from compas.geometry import is_point_on_segment
 from compas.geometry import length_vector
-from compas.geometry import midpoint_point_point
 from compas.geometry import normalize_vector
 from compas.geometry import project_point_plane
 from compas.geometry import scale_vector
@@ -210,61 +206,6 @@ def scale_polygon(polygon, scale):
     return scaled_polygon
 
 
-def untangle_polygon(polygon):
-    """Untangle a polygon.
-
-    Parameters
-    ----------
-    polygon : list of lists
-        A list of polygon point coordinates.
-
-    Returns
-    -------
-    list of lists
-        Reordered polygon point coordinates.
-
-    """
-
-    def _cross_edges(edge1, edge2):
-        a, b = edge1
-        c, d = edge2
-        edge1_vec = normalize_vector(subtract_vectors(b, a))
-        edge2_vec = normalize_vector(subtract_vectors(d, c))
-        cross = cross_vectors(edge1_vec, edge2_vec)
-        return cross
-
-    xyz = {i: polygon[i] for i in range(len(polygon))}
-    vkeys = range(len(polygon))
-
-    count = 20
-    while count:
-        count -= 1
-        moved = []
-
-        for i in range(-1, len(polygon) - 1):
-            t = xyz[vkeys[i - 2]]
-            u = xyz[vkeys[i - 1]]
-            v = xyz[vkeys[i]]
-            w = xyz[vkeys[i + 1]]
-
-            u_cross = _cross_edges((t, u), (u, v))
-            v_cross = _cross_edges((u, v), (v, w))
-
-            dot = dot_vectors(u_cross, v_cross)
-
-            if dot < 0:
-                midpt = midpoint_point_point(u, w)
-                vec = scale_vector(subtract_vectors(midpt, v), 1.5)
-
-                xyz[vkeys[i]] = add_vectors(v, vec)
-                moved.append([vkeys[i]])
-
-        if len(moved) == 0:
-            break
-
-    return [xyz[i] for i in vkeys]
-
-
 def polygon_flatness(polygon):
     """Comput the flatness of a polygon.
 
@@ -295,49 +236,6 @@ def polygon_flatness(polygon):
             deviation = dev
 
     return deviation
-
-
-def is_polygon_self_intersecting(polygon):
-    """Computes if as polygon is self intersecting in plane, or self overlapping in space.
-
-    Parameters
-    ----------
-    polygon : list of lists
-        A list of polygon point coordinates.
-
-    Returns
-    -------
-    bool_1
-        ``True`` if self overlapping.
-        ``False`` otherwise.
-    bool_2
-        ``True`` if self intersecting.
-        ``False`` otherwise.
-
-    """
-    edges = []
-    for i in range(-1, len(polygon) - 1):
-        edges.append((i, i + 1))
-
-    for u1, v1 in edges:
-        for u2, v2 in edges:
-            if u1 == u2 or v1 == v2 or u1 == v2 or u2 == v1:
-                continue
-            else:
-                a = polygon[u1]
-                b = polygon[v1]
-                c = polygon[u2]
-                d = polygon[v2]
-
-                int_1, int_2 = intersection_line_line((a, b), (c, d))
-
-                if int_1 or int_2:
-                    if distance_point_point(int_1, int_2) > 0:
-                        overlapping = True
-                    if is_point_on_segment(int_1, (a, b)) or is_point_on_segment(int_2, (c, d)):
-                        intersecting = True
-
-    return overlapping, intersecting
 
 
 # ******************************************************************************

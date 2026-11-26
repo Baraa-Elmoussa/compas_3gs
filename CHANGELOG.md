@@ -62,3 +62,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Removed `VolMesh3gs.cell_vertex_delete` and `VolMesh3gs.delete_halfface`.
 * Removed `VolMesh3gs.boundary_halfface_manifold_neighbors` and `boundary_halfface_manifold_neighborhood`, which skipped neighbours in the same cell and passed the wrong key in their ring loop.
 * Removed private helpers that nothing uses any more from `algorithms/planarisation.py` and `utilities/geometry.py`.
+* Removed `untangle_polygon` and `is_polygon_self_intersecting` from `utilities/geometry.py` (not exported, no callers), and the unused `lmin` / `lmax` edge defaults of `Network3gs`.
