@@ -13,12 +13,12 @@ planarisation or reciprocation. The files in [`.agents/`](.agents/) list that AP
 
 Read these pages of the documentation (Markdown, in `docs/`) before changing an algorithm:
 
-- [Graphic statics](docs/overview/00_graphic_statics.md), [Motivation](docs/overview/01_motivation.md)
-- [Design workflow](docs/overview/02_design_workflow.md), [Implementation](docs/overview/03_implementation.md)
-- [Nomenclature](docs/overview/04_nomenclature.md): the names used in the code (cell, EGI, halfface, ...)
-- The user manual, one page per method: [polyhedral cell](docs/user_manual/00_polyhedral_cell.md),
-  [multi-cell polyhedron](docs/user_manual/01_multi-cell_polyhedron.md),
-  [cell network](docs/user_manual/02_cell_network.md), [materialisation](docs/user_manual/03_materialisation.md)
+- [Graphic statics](docs/userguide/theory/00_graphic_statics.md), [Motivation](docs/userguide/theory/01_motivation.md)
+- [Design workflow](docs/userguide/theory/02_design_workflow.md), [Implementation](docs/userguide/theory/03_implementation.md)
+- [Nomenclature](docs/userguide/theory/04_nomenclature.md): the names used in the code (cell, EGI, halfface, ...)
+- The User Guide, one page per method: [polyhedral cell](docs/userguide/polyhedral_cell/index.md),
+  [multi-cell polyhedron](docs/userguide/multi_cell_polyhedron/index.md),
+  [cell network](docs/userguide/cell_network.md), [materialisation](docs/userguide/materialisation.md)
 
 ## What the package can do
 

@@ -90,14 +90,42 @@ def test_derive_force_diagram(tripod):
     assert check[apex]["angle"] < 0.1
 
 
-def test_derive_force_diagram_keeps_only_cells_that_reach_the_forces(tripod):
+def test_derive_force_diagram_skips_nodes_out_of_balance(tripod):
     tripod.solve()
-    tripod.derive_force_diagram(max_area_error=0.0, max_angle=0.0)
+    first = next(iter(tripod.form.edges()))
+    tripod.form.edge_attribute(first, "_f", 2 * tripod.form.edge_force(first))  # no longer in equilibrium
+    tripod.derive_force_diagram()
 
     apex = tripod.node_at(APEX)
     assert tripod.cells == {}
-    assert tripod.cell_faces == {}
-    assert "does not reach the forces" in tripod.skipped[apex]
+    assert "do not close" in tripod.skipped[apex]
+
+
+def test_derive_force_diagram_reaches_every_force_of_a_space_truss():
+    # a node with several forces in one plane and of very different sizes: the bottom nodes of a Warren truss
+    left = [[i * 2.0, -1.0, 0.0] for i in range(4)]
+    right = [[i * 2.0, 1.0, 0.0] for i in range(4)]
+    top = [[(i + 0.5) * 2.0, 0.0, 1.5] for i in range(3)]
+    lines = [(left[i], left[i + 1]) for i in range(3)] + [(right[i], right[i + 1]) for i in range(3)] + [(top[0], top[1]), (top[1], top[2])]
+    lines += [(top[i], p) for i in range(3) for p in (left[i], left[i + 1], right[i], right[i + 1])]
+    lines += [(left[i], right[i]) for i in range(4)] + [(left[0], right[1]), (right[1], left[2]), (left[2], right[3])]
+    model = GSModel.from_lines(lines)
+    model.set_support(model.node_at(left[0]), "pinned")
+    model.set_support(model.node_at(right[0]), "roller")
+    model.set_support(model.node_at(left[-1]), "yz")
+    for point in left[1:-1] + right[1:-1]:
+        model.add_force(model.node_at(point), [0.0, 0.0, -10.0])
+    for point in top:
+        model.add_force(model.node_at(point), [0.0, 2.0, 0.0])
+    model.solve()
+
+    model.derive_force_diagram()
+
+    assert all("four or more" in reason or "same direction" in reason for reason in model.skipped.values())
+    assert len(model.cells) >= model.form.number_of_nodes() - 2
+    for node, check in model.check().items():
+        assert check["area_error"] < 1e-6
+        assert check["angle"] < 1e-5
 
 
 def test_solve_removes_old_cells(tripod):

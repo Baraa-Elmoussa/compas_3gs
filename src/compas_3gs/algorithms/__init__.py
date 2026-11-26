@@ -86,10 +86,11 @@ from .arearisation import cell_arearise_face
 from .duality import volmesh_dual_network
 from .duality import volmesh_dual_volmesh
 from .egi import cell_from_egi
-from .egi import cell_from_forces
 from .egi import egi_from_vectors
 from .equilibrium import EquilibriumResult
 from .equilibrium import truss_equilibrium
+from .minkowski import cell_from_forces
+from .minkowski import cell_from_normals_and_areas
 from .other import golden_section_search
 from .planarisation import cell_planarise
 from .planarisation import volmesh_planarise
@@ -104,6 +105,7 @@ __all__ = [
     "egi_from_vectors",
     "cell_from_egi",
     "cell_from_forces",
+    "cell_from_normals_and_areas",
     "EquilibriumResult",
     "truss_equilibrium",
     "golden_section_search",

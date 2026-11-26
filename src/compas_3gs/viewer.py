@@ -34,8 +34,8 @@ from compas_3gs.model import GSModel
 
 __all__ = ["GSViewer"]
 
-COMPRESSION = Color.red()
-TENSION = Color.blue()
+COMPRESSION = Color.blue()
+TENSION = Color.red()
 ZERO = Color.grey()
 LOAD = Color.black()
 REACTION = Color.from_hex("#2e9e44")
@@ -48,7 +48,7 @@ class GSViewer(Viewer):
 
     Everything goes into groups of the scene tree, so that each part can be shown, hidden or removed on its own:
 
-    - `form`: `members` (red in compression, blue in tension, the width by the force), `labels` (the member forces),
+    - `form`: `members` (blue in compression, red in tension, the width by the force), `labels` (the member forces),
       `supports` (a glyph per support), `loads` (black arrows) and `reactions` (green arrows);
     - `force`: `cells`, the force polyhedron of every node, or the polyhedral force diagram.
 

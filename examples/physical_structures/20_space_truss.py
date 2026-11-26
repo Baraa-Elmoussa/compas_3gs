@@ -133,13 +133,13 @@ for m, (i, j) in enumerate(members):
         print("  {:2d}: |N| {:.3f}   cell {}: {:.3f}   cell {}: {:.3f}".format(m, abs(N[m]), i, cells[i][0].face_area(m), j, cells[j][0].face_area(m)))
 
 # ------------------------------------------------------------------------------
-# 4. viewer: the tower (red compression, blue tension) and the node cells beside it
+# 4. viewer: the tower (blue compression, red tension) and the node cells beside it
 # ------------------------------------------------------------------------------
 
 viewer = Viewer()
 peak = max(abs(N))
 for m, (i, j) in enumerate(members):
-    color = Color.red() if N[m] < 0 else Color.blue()
+    color = Color.blue() if N[m] < 0 else Color.red()
     viewer.scene.add(Line(xyz[i], xyz[j]), linecolor=color, linewidth=1 + 5 * abs(N[m]) / peak)
     viewer.scene.add(Tag("{:+.2f}".format(N[m]), centroid_points([xyz[i], xyz[j]]), color=color, height=12))
 for s in supports:
@@ -159,7 +159,7 @@ for node, (cell, vectors) in cells.items():
         elif key in (LOAD_KEY, REACTION_KEY):
             facecolor[key] = Color.black()
         else:
-            facecolor[key] = Color.red() if N[key] < 0 else Color.blue()
+            facecolor[key] = Color.blue() if N[key] < 0 else Color.red()
     viewer.scene.add(cell, facecolor=facecolor, opacity=0.6, show_lines=True)
 
 viewer.show()

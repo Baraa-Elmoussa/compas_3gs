@@ -7,7 +7,7 @@
 | Function | Returns |
 |---|---|
 | `get_force_mags(volmesh, network)` | `{(u, v): force}` from the face areas, with the sign from `volmesh.attributes["convention"]` (negative: compression) |
-| `get_force_colors_uv(volmesh, network, gradient=False, tol=0.001)` | `{(u, v): (r, g, b)}`, 0–255: blue compression, red tension, white zero (the 3GS convention; `GSViewer` draws compression red and tension blue) |
+| `get_force_colors_uv(volmesh, network, gradient=False, tol=0.001)` | `{(u, v): (r, g, b)}`, 0–255: blue compression, red tension, white zero (the 3GS convention, which `GSViewer` follows) |
 | `get_force_colors_hf(volmesh, network, uv_c_dict=None, gradient=False, boundary=False, tol=0.001)` | `{halfface: (r, g, b)}` |
 | `pair_hf_to_uv(volmesh, network)`, `pair_uv_to_hf(network, volmesh)` | halfface ↔ edge of the dual |
 | `get_index_colordict(key_list, color_scheme=None)` | a colour per key along a gradient |
