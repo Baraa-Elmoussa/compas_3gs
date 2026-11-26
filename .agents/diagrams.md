@@ -36,4 +36,5 @@ Every class is a compas 2 datastructure with all of its methods; the table lists
 | `equilibrated_force_vectors.json` | `[{"origin", "vectors"}, ...]` (8 groups in equilibrium) | `egi_from_vectors(dict(enumerate(vectors)), origin)` |
 | `volmesh_*.json` (`cubes_4x4`, `donut`, `honeycomb`, `mat`, `shells`, `warped`) | `{"vertices", "cells"}` | `ForceVolMesh.from_vertices_and_cells(d["vertices"], d["cells"])` |
 
-Volmeshes are stored as plain vertices and cells, not with `to_json`: see [`compas2.md`](compas2.md).
+The sample volmeshes are plain vertices and cells. A `VolMesh3gs` or `ForceVolMesh` also saves with
+`to_json` and loads with `from_json`; a plain compas `VolMesh` does not: see [`compas2.md`](compas2.md).

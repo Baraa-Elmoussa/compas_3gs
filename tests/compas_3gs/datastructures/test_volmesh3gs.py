@@ -66,6 +66,86 @@ def test_constructed_volmesh_is_valid(name, request):
         else:
             assert opposite is not None
             assert volmesh.halfface_opposite_halfface(opposite) == halfface
+    assert volmesh.is_valid()
+
+
+def test_is_valid_finds_a_halfface_without_cell(grid):
+    grid.add_halfface([0, 1, 4])
+    assert not grid.is_valid()
+
+
+def test_is_valid_finds_an_open_cell(grid):
+    vertices = [grid.vertex_coordinates(vertex) for vertex in grid.vertices()]
+    cells = [[grid.halfface_vertices(halfface) for halfface in grid.cell_faces(cell)] for cell in grid.cells()]
+    cells[0] = cells[0][1:]
+    assert not VolMesh3gs.from_vertices_and_cells(vertices, cells).is_valid()
+
+
+@pytest.mark.parametrize("name", ["grid", "warped"])
+def test_edge_cells_in_order_around_the_edge(name, request):
+    volmesh = request.getfixturevalue(name)
+    for u, v in volmesh.edges():
+        halffaces = volmesh.edge_halffaces((u, v))
+        cells = volmesh.edge_cells((u, v))
+        assert len(cells) in (1, 2, 4)
+        assert len(set(cells)) == len(cells)
+        assert all((u, v) in volmesh.halfface_halfedges(halfface) for halfface in halffaces)
+        # each next cell is on the other side of the halfface of the previous one
+        following = [volmesh.halfface_opposite_cell(halfface) for halfface in halffaces]
+        assert following[:-1] == cells[1:]
+        if following[-1] is None:
+            # a boundary edge: no cell before the first one
+            assert volmesh.halfface_opposite_cell(volmesh.cell_halfedge_face(cells[0], (v, u))) is None
+        else:
+            assert following[-1] == cells[0]
+
+
+def test_halfface_manifold_neighbors_continue_the_halfface(grid):
+    for halfface in grid.halffaces():
+        nbrs = grid.halfface_manifold_neighbors(halfface)
+        # every square of a 2 x 2 x 2 grid touches two squares of its plane in other cells
+        assert len(nbrs) == 2
+        for nbr in nbrs:
+            assert grid.halfface_cell(nbr) != grid.halfface_cell(halfface)
+            assert grid.is_halfface_on_boundary(nbr) == grid.is_halfface_on_boundary(halfface)
+            assert TOL.is_allclose(grid.halfface_normal(nbr), grid.halfface_normal(halfface))
+        assert len(grid.halfface_manifold_neighborhood(halfface, ring=2)) == 3
+
+
+def test_cell_vertex_neighbors_and_faces_go_around_the_vertex(warped):
+    for cell in warped.cells():
+        for vertex in warped.cell_vertices(cell):
+            nbrs = warped.cell_vertex_neighbors(cell, vertex)
+            faces = warped.cell_vertex_faces(cell, vertex)
+            assert len(nbrs) == len(faces) == 3
+            assert set(nbrs) == {v for u, v in warped.cell_halfedges(cell) if u == vertex}
+            for i, face in enumerate(faces):
+                assert (vertex, nbrs[i]) in warped.halfface_halfedges(face)
+                assert (nbrs[(i + 1) % 3], vertex) in warped.halfface_halfedges(face)
+
+
+def test_cell_vertex_neighbors_raises_for_another_vertex(grid):
+    with pytest.raises(KeyError):
+        grid.cell_vertex_neighbors(0, 26)
+
+
+def test_delete_cell_removes_the_attributes_only_it_uses(grid):
+    for halfface in grid.cell_faces(0):
+        grid.face_attribute(halfface, "_a", 1.0)
+    for edge in grid.cell_edges(0):
+        grid.edge_attribute(edge, "tag", 1)
+    opposites = [grid.halfface_opposite_halfface(halfface) for halfface in grid.cell_faces(0) if not grid.is_halfface_on_boundary(halfface)]
+    shared = [edge for edge in grid.cell_edges(0) if grid.edge_cells(edge) != [0]]
+
+    grid.delete_cell(0)
+
+    assert grid.is_valid()
+    # the neighbours keep the attributes of the faces and edges they share with the deleted cell, the rest is gone
+    assert len(opposites) == 3
+    assert all(grid.face_attribute(halfface, "_a") == 1.0 for halfface in opposites)
+    assert all(grid.edge_attribute(edge, "tag") == 1 for edge in shared)
+    assert len(grid._face_data) == 3
+    assert len(grid._edge_data) == len({frozenset(edge) for edge in shared})
 
 
 def test_vertex_normal(grid):
@@ -140,10 +220,6 @@ def test_cell_pair_halffaces_raises_without_shared_face(grid, pair):
 
 
 @pytest.mark.roundtrip
-@pytest.mark.xfail(
-    strict=True,
-    reason="compas 2.15.1 VolMesh.__data__ writes each face of a cell once per halfedge: a 2x2x2 meshgrid comes back with 192 halffaces instead of 48",
-)
 @pytest.mark.parametrize("how", ["json", "copy"])
 def test_roundtrip(grid, how):
     grid.name = "grid"
@@ -174,3 +250,28 @@ def test_roundtrip(grid, how):
     for halfface in grid.halffaces():
         assert other.halfface_vertices(halfface) == grid.halfface_vertices(halfface)
         assert other.face_attributes(halfface) == grid.face_attributes(halfface)
+
+
+@pytest.mark.roundtrip
+@pytest.mark.parametrize("how", ["json", "copy"])
+def test_roundtrip_keeps_keys_and_cell_attributes_after_a_deletion(grid, how):
+    grid.cell_attribute(3, "dir", -1)
+    grid.delete_cell(0)
+
+    other = compas.json_loads(compas.json_dumps(grid)) if how == "json" else grid.copy()
+
+    assert other.is_valid()
+    assert list(other.cells()) == list(grid.cells())
+    assert sorted(other.halffaces()) == sorted(grid.halffaces())
+    for cell in grid.cells():
+        assert sorted(other.cell_faces(cell)) == sorted(grid.cell_faces(cell))
+        assert other.cell_attributes(cell) == grid.cell_attributes(cell)
+    assert other.add_cell([[0, 1, 2]]) == grid.add_cell([[0, 1, 2]])
+    assert other.add_halfface([0, 1, 3]) == grid.add_halfface([0, 1, 3])
+
+
+def test_reads_the_data_of_a_compas_volmesh():
+    # a compas VolMesh lists every face of a cell once per halfedge in its data
+    volmesh = VolMesh3gs.__from_data__(VolMesh.from_meshgrid(1, 1, 1, 2, 2, 2).__data__)
+    assert len(list(volmesh.halffaces())) == 48
+    assert volmesh.is_valid()
