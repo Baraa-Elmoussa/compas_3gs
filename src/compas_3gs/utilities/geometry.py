@@ -377,12 +377,12 @@ def volmesh_face_areaness(volmesh: "VolMesh", target_areas: dict[int, float]) ->
 
 
 def datastructure_centroid(datastructure):
-    """Compute the centroid of the datastructure.
+    """Compute the centroid of the vertices of a mesh or volmesh.
 
     Parameters
     ----------
     datastructure
-        A network, mesh or volmesh object.
+        A mesh or volmesh object.
 
     Returns
     -------

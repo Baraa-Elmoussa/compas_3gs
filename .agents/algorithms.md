@@ -11,7 +11,7 @@
 | `cell_from_normals_and_areas(normals, areas, origin=None, tol=None)` | the one convex cell with these face normals and areas (Minkowski problem), face keys kept; exact to `tol` (default `TOL.relative`); `ValueError` if fewer than four faces, an area not positive, two equal normals, coplanar normals, or `sum(area * normal) != 0` |
 | `cell_from_forces(forces, origin, tol=None)` | force polyhedron of a node: one face per force, normal to it, area = magnitude, through `cell_from_normals_and_areas`; zero forces left out; `ValueError` for fewer than four forces, two in the same direction, all in one plane, or out of balance |
 | `cell_planarise(cell, kmax=100, target_centers=None, target_normals=None, target_areas=None, fix_vkeys=None, avg_fkeys=None, collapse_edge_length=0.1, tolerance_flat=0.001, tolerance_area=0.001, callback=None, callback_args=None, print_result_info=False)` | planar faces, optionally with target normals, centres and areas (by face key) |
-| `cell_arearise_face(cell, fkey, target_area, tol=0.001, callback=None, callback_args=None)` | move one face along its normal to a target area (golden section search; see the limits in `TODO.md`) |
+| `cell_arearise_face(cell, fkey, target_area, tol=0.001, zmax=None, callback=None, callback_args=None)` | move one face along its normal to a target area, the nearer of two positions (golden section search on the position, Lee 2018 §5.3.2.1); `tol` and `zmax` are distances along the normal, a negative target turns the face over, `ValueError` if the target is out of reach |
 | `golden_section_search(function, a, b, tol=0.001)` | minimum of a unimodal function on `[a, b]` |
 
 ## Multi-cell force diagrams (volmeshes)

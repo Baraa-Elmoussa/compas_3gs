@@ -6,7 +6,6 @@ from compas.geometry import area_polygon
 from compas.geometry import centroid_points
 from compas.geometry import distance_point_point
 from compas.tolerance import TOL
-from compas_3gs.datastructures import Network3gs
 from compas_3gs.datastructures import VolMesh3gs
 from compas_3gs.diagrams import Cell
 from compas_3gs.utilities import cell_face_areaness
@@ -191,11 +190,3 @@ def test_datastructure_centroid_volmesh():
 
     volmesh.vertex_attribute(0, "x", -2.7)
     assert datastructure_centroid(volmesh) == pytest.approx([0.4, 0.5, 0.5])
-
-
-@pytest.mark.xfail(strict=True, raises=AttributeError, reason="datastructure_centroid calls vertices() and vertex_coordinates(), which a Graph does not have (TODO.md)")
-def test_datastructure_centroid_network():
-    network = Network3gs()
-    for xyz in [[0, 0, 0], [3, 0, 0], [0, 3, 0], [0, 0, 6]]:
-        network.add_node(x=xyz[0], y=xyz[1], z=xyz[2])
-    assert datastructure_centroid(network) == pytest.approx([0.75, 0.75, 1.5])

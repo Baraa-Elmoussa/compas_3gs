@@ -39,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Changed `point_reflection` to work for graphs, meshes and volmeshes.
 * Changed the volmesh operations to rebuild cells through the public API, keeping cell, face and edge attributes.
 * Changed mutable default arguments to `None`.
+* Changed `cell_arearise_face` to follow Lee (2018, §5.3.2.1) in full: the golden section search on the position of the face runs up to `zmax` (new parameter, a distance along the normal) or up to the vertex of the parabola of the face area, so that of two positions with the target area the nearer one is found; the move direction comes from that parabola; it raises `ValueError` if the target area is out of reach.
+* Changed `valuedict_to_colordict` to give every key the colour of the lowest value when all values are equal, `get_force_mags` to give 0 to a member in the plane of its face, and the docstring of `datastructure_centroid` to meshes and volmeshes.
 * Changed the volmesh `scale` to `attributes["scale"]`.
 * Moved the old Rhino examples and `.3dm` files to `examples/rhino/`.
 * Fixed `add_vertex(vkey=...)` calls in `volmesh_dual_volmesh` and `volmesh_vertex_merge`, which stored the key as an attribute and let compas pick another key.
