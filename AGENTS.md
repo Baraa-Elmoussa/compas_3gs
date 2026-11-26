@@ -34,7 +34,8 @@ Read these pages of the documentation (Markdown, in `docs/`) before changing an 
   → [`.agents/algorithms.md`](.agents/algorithms.md), [`.agents/operations.md`](.agents/operations.md),
   [`.agents/diagrams.md`](.agents/diagrams.md)
 - **Draw** a model in compas_viewer, grouped, with compression and tension, supports, loads,
-  reactions, force cells and an info panel with the force of a selected member.
+  reactions, force cells and an info panel with the force of a selected member and the forces on
+  the node of a selected load, support, reaction or cell.
   → [`.agents/viewer.md`](.agents/viewer.md)
 
 [`.agents/tasks.md`](.agents/tasks.md) maps common tasks to the call and to an example that does it.

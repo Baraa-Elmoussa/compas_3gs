@@ -113,4 +113,5 @@ force polyhedra of the nodes beside the truss.
 ///
 
 Selecting a member, in the scene tree or in the view, shows its type (compression or tension), its
-force and the force components in the info panel of the sidebar ([Viewing](userguide/viewing.md)).
+force and the force components in the info panel of the sidebar; selecting a load, a support, a
+reaction or a force polyhedron shows the forces on its node ([Viewing](userguide/viewing.md)).

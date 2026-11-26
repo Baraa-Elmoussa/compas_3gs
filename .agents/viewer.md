@@ -13,14 +13,16 @@ viewer.show()
 |---|---|
 | `add_model(model, labels=True, offset=None)` | everything; `offset` places the force diagram (default: beside the form along x) |
 | `add_form(form, labels=True, offset=None)` | groups `form/members, labels, supports, loads, reactions`; members blue in compression, red in tension, width by force |
-| `update_form(form, groups)` | after the forces change (for example in a slider callback): recolours and resizes the members and refreshes their info; labels, loads and reactions keep their drawn state |
+| `update_form(form, groups)` | after the forces change (for example in a slider callback): recolours and resizes the members and refreshes the info of members, loads, supports and reactions; labels and arrows keep their drawn state |
 | `add_cells(model, offset)` | the force polyhedron of every node of `model.cells`, scaled together, faces coloured like their members (load black, reaction green) |
 | `add_force_diagram(force, form, offset)` | a `ForceVolMesh`, one mesh per cell |
-| `add_support(point, dofs, size, parent=None)` | support glyph: tetrahedron; + two rollers for one restrained direction, + a line for two |
-| `member_info(form, edge)` | `{"type", "force", "fx", "fy", "fz"}` for the info panel |
+| `add_support(point, dofs, size, parent=None)` | support glyph: tetrahedron; + two rollers for one restrained direction, + a line for two; returns its scene objects |
+| `member_info(form, edge)` | `{"type", "force", "fx", "fy", "fz"}` for the info panel of a member |
+| `node_info(form, node)` | `{"node", "px", "py", "pz" (if loaded), "support", "rx", "ry", "rz" (if supported), "member u-v": force, ...}`, the info of a load, support glyph, reaction or cell |
 | `viewer.info`, `show_info(sceneform, node)` | the info panel of the sidebar: shows `obj.attributes["data"]` of the selected object (tree or view) |
 
 Every `add_*` returns its groups by name, so parts can be hidden (`groups["reactions"].show = False`).
+A drawn member has its edge as `obj.attributes["edge"]`; a load, support glyph, reaction or cell has its node as `obj.attributes["node"]`.
 Any scene object can fill the info panel by setting `obj.attributes["data"] = {...}` (one flat dict).
 
 A live slider (see `examples/model/05_warren_truss_fem.py`):

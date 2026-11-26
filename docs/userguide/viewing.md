@@ -39,13 +39,24 @@ Selecting a member, in the scene tree or in the view, shows in the sidebar:
 | `force` | the axial force, tension positive |
 | `fx`, `fy`, `fz` | the force the member applies to its first node |
 
+Selecting a load, a support, a reaction or a force polyhedron shows the forces on its node
+(`viewer.node_info(form, node)`):
+
+| Name | Value |
+|---|---|
+| `node` | the node |
+| `px`, `py`, `pz` | the load, if the node has one |
+| `support` | the restrained directions, if the node is a support |
+| `rx`, `ry`, `rz` | the reaction, if the node is a support |
+| `member u-v` | the axial force of each member of the node, tension positive |
+
 The panel shows the attribute `data` of any selected scene object, so a script can fill it for its own
 objects: `obj.attributes["data"] = {"name": value, ...}`.
 
 ## Changing the forces while viewing
 
 After solving again, `viewer.update_form(form, groups)` recolours and resizes the members and refreshes
-their info. With a slider of compas_viewer, a script can pick the state of an indeterminate structure
+their info and that of the loads, supports and reactions. With a slider of compas_viewer, a script can pick the state of an indeterminate structure
 while it is shown:
 
 ```python
