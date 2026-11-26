@@ -118,6 +118,24 @@ def test_cell_from_forces_with_forces_in_one_plane_of_very_different_sizes():
         assert angle_vectors(cell.face_normal(face), force, deg=True) < 1e-5
 
 
+def test_cell_from_forces_with_areas_a_hundred_times_apart():
+    # the forces at a foot of a lattice tower: a leg and a face diagonal of about 15000 kN, the reaction, and two
+    # members of about 150 and 500 kN; the first step of the search leaves the polytope when it is not kept inside
+    forces = {
+        0: [-145.07497139367595, 11.437070331436004, -18.78144500701343],
+        1: [-7159.36192061388, 7159.36192061388, -11756.783713022149],
+        2: [-38.834357397982004, 492.5993392834764, -63.772043601775],
+        3: [0.0, 0.0, -786.3004187220452],
+        4: [7343.271249405537, -7663.398330228798, 12625.637620353],
+    }
+    cell = cell_from_forces(forces, [0.0, 0.0, 0.0])
+
+    assert cell.is_closed()
+    for face, force in forces.items():
+        assert cell.face_area(face) == pytest.approx(length_vector(force), rel=1e-6)
+        assert angle_vectors(cell.face_normal(face), force, deg=True) < 1e-5
+
+
 def test_cell_from_forces_tripod_apex():
     apex = [0.0, 0.0, 3.0]
     feet = [[2.0 * cos(radians(a)), 2.0 * sin(radians(a)), 0.0] for a in (0, 120, 240)]

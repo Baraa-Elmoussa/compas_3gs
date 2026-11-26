@@ -23,11 +23,16 @@ def _polytope(normals: np.ndarray, offsets: np.ndarray) -> tuple[np.ndarray, np.
 
     """
     n = len(normals)
-    # a point inside: the centre of the largest ball in the polytope, by linear programming
-    ball = linprog(np.array([0.0, 0.0, 0.0, -1.0]), A_ub=np.hstack([normals, np.ones((n, 1))]), b_ub=offsets, bounds=[(None, None)] * 3 + [(0.0, None)])
-    if not ball.success or ball.x[3] <= TOL.absolute * max(1.0, np.abs(offsets).max()):
-        return None
-    points = HalfspaceIntersection(np.hstack([normals, -offsets[:, None]]), ball.x[:3]).intersections
+    flat = TOL.absolute * max(1.0, np.abs(offsets).max())
+    if offsets.min() > flat:
+        centre = np.zeros(3)  # the origin is inside, offsets.min() away from every face plane
+    else:
+        # a point inside: the centre of the largest ball in the polytope, by linear programming
+        ball = linprog(np.array([0.0, 0.0, 0.0, -1.0]), A_ub=np.hstack([normals, np.ones((n, 1))]), b_ub=offsets, bounds=[(None, None)] * 3 + [(0.0, None)])
+        if not ball.success or ball.x[3] <= flat:
+            return None
+        centre = ball.x[:3]
+    points = HalfspaceIntersection(np.hstack([normals, -offsets[:, None]]), centre).intersections
     # several planes through one corner give the corner several times
     size = max(1.0, np.abs(points).max())
     welded = []
@@ -60,9 +65,9 @@ def cell_from_normals_and_areas(
     The cell is found as Minkowski proved it exists: the distances `h` of the face planes from the centre
     that give the largest volume for a fixed `sum(area * h)` give face areas proportional to the target
     areas. A quasi-Newton optimisation finds them (it minimises `sum(area * h) - log(volume) / 3`, a
-    convex function of `h`), the cell is scaled to the target areas, and Newton steps on the face areas,
-    with the derivative of each face area with respect to the plane distances, bring every area to its
-    target.
+    convex function of `h`, with the centre kept inside the cell), the cell is scaled to the target areas,
+    and Newton steps on the face areas, with the derivative of each face area with respect to the plane
+    distances and each step shortened until the areas come closer, bring every area to its target.
 
     Parameters
     ----------
@@ -128,13 +133,17 @@ def cell_from_normals_and_areas(
         _, faces_area, _, volume = polytope
         return weights @ offsets - np.log(volume) / 3, weights - faces_area / (3 * volume)
 
-    offsets = minimize(objective, np.ones(len(keys)), jac=True, method="L-BFGS-B").x
+    # the objective does not change with a translation (sum(w * n) = 0), and at its minimum sum(w * h) = 3 V / S = 1,
+    # so the cell has an inradius of at least V / S = 1 / 3 and a translation with every h above it: the search keeps
+    # every h above 1e-3, which keeps the centre inside and the polytope neither empty nor flat
+    bounds = [(1e-3, None)] * len(keys)
+    offsets = minimize(objective, np.ones(len(keys)), jac=True, method="L-BFGS-B", bounds=bounds, options={"ftol": 1e-15, "gtol": 1e-10}).x
 
-    # 2. the size, then Newton steps on the areas: dA_i/dh_j = l_ij / sin(t_ij), dA_i/dh_i = -sum_j l_ij cos(t_ij) / sin(t_ij)
+    # 2. the size, then Newton steps on the areas: dA_i/dh_j = l_ij / sin(t_ij), dA_i/dh_i = -sum_j l_ij cos(t_ij) / sin(t_ij),
+    #    each step halved until the polytope exists and its areas come closer to the target
+    offsets = offsets * np.sqrt(target.sum() / _polytope(N, offsets)[1].sum())
     points, faces_area, faces, _ = _polytope(N, offsets)
-    offsets = offsets * np.sqrt(target.sum() / faces_area.sum())
     for _ in range(20):
-        points, faces_area, faces, _ = _polytope(N, offsets)
         error = faces_area - target
         if np.max(np.abs(error) / target) <= tol:
             break
@@ -149,7 +158,16 @@ def cell_from_normals_and_areas(
                 J[i, j] = J[j, i] = length / sin
                 J[i, i] -= length * cos / sin
                 J[j, j] -= length * cos / sin
-        offsets = offsets + np.linalg.lstsq(J, -error, rcond=None)[0]  # the translations are the null space of J
+        step = np.linalg.lstsq(J, -error, rcond=None)[0]  # the translations are the null space of J
+        for _ in range(30):
+            polytope = _polytope(N, offsets + step)
+            if polytope is not None and np.linalg.norm(polytope[1] - target) < np.linalg.norm(error):
+                break
+            step = step / 2
+        else:
+            break
+        offsets = offsets + step
+        points, faces_area, faces, _ = polytope
     if np.max(np.abs(faces_area - target) / target) > tol:
         raise ValueError("No cell reaches the areas: largest relative area error {:.3g}.".format(np.max(np.abs(faces_area - target) / target)))
 
